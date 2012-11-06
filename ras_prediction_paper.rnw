@@ -1,0 +1,317 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{Sweave}
+\usepackage{graphicx, verbatim}
+\usepackage{colortbl}
+\usepackage{longtable}
+\usepackage{subfigure}
+\usepackage{multirow}
+\usepackage{pbox}
+\usepackage[section]{placeins}
+\setlength{\textwidth}{6.5in} 
+\setlength{\textheight}{9in}
+\setlength{\oddsidemargin}{0in} 
+\setlength{\evensidemargin}{0in}
+\setlength{\topmargin}{-1.5cm}
+
+\DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em,frame=single}
+
+\begin{document}
+\title{Model of Ras pathway activity in colorectal cancer predicts response to targeted agents }
+%\begin{abstract}
+%\end{abstract}
+
+
+\maketitle
+
+\section*{Introduction}
+
+Efforts to model Ras pathway activity have relied primarily on cell-line or murine based systems to identify signatures of ``Ras-ness" via Ras over-expression (\cite{Bild2006},\cite{Sweet-Cordero2005},\cite{Chang2009}) or gene silencing (\cite{Singh2009a}).  In Loboda et al\cite{Loboda2010} multiple Ras models in colon, lung, breast, and pancreatic tumors were aggregated to derive a meta-Ras signature.  Overall, while these signatures appear to identify Ras-like features across various tumor types, it is unclear whether these models are optimally designed to interrogate fine-grained Ras behavior within disease specific contexts.  The increasing number of targeted agents that impact the EGF/Ras/MEK signaling pathways - and the failure of these therapies to translate seamlessly between disease types - provides strong motivation to assess Ras signatures in a context dependent manner.  As an example, the EGFR inhibitors cetuximab and erlotinib have shown different rates of efficacy in colorectal and lung cancer [cite], suggesting subtle but important differences between these two diseases.   In this article, we focus on the Ras pathway in colorectal cancer to improve characterization of this potent oncogenic pathway. 
+
+\section*{Results}
+
+\subsection*{Ras model in CRC}
+
+As a basic criteria we assume that any robust model of Ras in CRC should be able to differentiate Kras mutant samples from wild-type.  We evaluate this criteria on three Ras gene expression signatures (\cite{Bild2006}, \cite{Loboda2010}, \cite{Singh2009a}) within four large CRC human data sets. We observe that these signatures fail to robustly separate Kras mutant samples from wild-type (see Fig \ref{fig:sigEvaluation}), underscoring the challenge of translating models across disease types and experimental conditions.  To verify the utility of these models in other disease contexts, we apply the Loboda, et al signature \cite{Loboda2010} to four lung adenocarcioma data sets.  We find that it is performant on 3 of the 4 data sets, demonstrating that it is optimized for a lung and not a colorectal tumor context (Supp Fig \ref{fig:lobodaInLung}).  Based on these results, we focus directly on gene expression from human colorectal tumor samples to build and validate a model of Ras specific to CRC disease. 
+
+Using a large gene expression data set derived from primary colon and rectal tumor samples (n=290), we train a multi-gene penalized logistic regression model to separate Kras mutant samples (codon 12 and 13) from wild-type (see M.M.). Internal bootstrapping of the data demonstrates robust prediction performance (Fig \ref{fig:kfsysccBootstrapping} , median AUC=.81) as well as a median model size of approximately 200 genes.  We train a final model using all 290 samples, and assess performance on 3 CRC data sets.  Results show robust model performance across all data sets, which include primary colon, primary rectum, and metastatic colorectal disease profiled on Agilent and Affymetrix platforms (Fig \ref{fig:kfsysccROC}, Table \ref{tbl:kfsysccAUC}).
+
+To assess whether our model translates to other tumor types with high Kras mutant frequencies, we apply our model on four lung adenocarcinoma and one uterine corpus endometrium data sets and assess model performance.  Overall, we observe much lower AUC performance in lung and uterine tumors compared to CRC, suggesting that our model is disease specific (Tbl \ref{tbl:kfsysccAUC}).  
+
+\begin{figure}[h]
+\centering
+\subfigure[Loboda signature]{
+\includegraphics{plots/colon_gsva_loboda_ras_mut_status.pdf}
+}
+\subfigure[Settleman signature]{
+\includegraphics{plots/colon_gsva_settleman_ras_mut_status.pdf}
+}
+
+\subfigure[Bild signature]{
+\includegraphics{plots/colon_gsva_bild_ras_mut_status.pdf}
+}
+\caption{Assessment of 3 oncogenic Ras signatures for separating Kras mutant and wild-type samples in four colorectal data sets. (wilcoxon-rank sum test)}
+\label{fig:sigEvaluation}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics{plots/kfsyscc_bootstrapped_aucs.pdf}
+\caption{Internal validation of Kras prediction model in KSFYSCC via bootstrapping.}
+\label{fig:kfsysccBootstrapping}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{plots/kfsyscc_kras_prediction_validtion.pdf}
+\caption{Receive operating curves (ROC) for Kras mutation prediction in 3 colorectal validation data sets.}
+\label{fig:kfsysccROC}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ | c | l | r c | c  c  c | } 
+\hline
+& & n & \% kras mut & AUC & Sensitivity & Specificity \\ \hline
+\multirow{3}{*}{CRC} & TCGA CRC & 148 & 34.4 & 0.80 & 0.63 & 0.81 \\
+& Khambata-Ford & 68 & 39.7 & 0.78 & 0.93 & 0.66 \\
+& Gaedcke & 65 & 46.1 & 0.90 & 0.97 & 0.80 \\ \hline \hline
+\multirow{4}{*}{Lung adeno} & TCGA LUAD & 162 & 28.4 & 0.61 & - & - \\
+& Battle & 124 & 19.3 & 0.53 &   - & - \\
+& GSE26939 & 116 & 17.2 & 0.63 &   - & - \\
+& Chemores & 110 & 18.2 & 0.68 &  - & - \\ \hline \hline
+\pbox{20cm}{Uterine Corpus \\ Endometrium } & TCGA UCEC &  241 & 21.1 & 0.63 & - & - \\
+  \hline
+\end{tabular}
+\caption{Area under the curve (AUC), sensitivity, and specificity for Kras mutation prediction in 3 colorectal and 4 lung adenocarcinoma validation data sets.}
+\label{tbl:kfsysccAUC}
+\end{table}
+
+\FloatBarrier
+
+\subsection*{Rasness in TCGA}
+
+The output of our predictive model is a continuous value between 0 and 1, which we refer to as the Ras Index Score or RIS.  Using our model trained from Kras codon 12 and 13 mutations, we take advantage of the full exome sequencing available with the TCGA CRC data to investigate variation of RIS across alternative Ras activating genes (Braf and Nras), as well as specific activating amino acid changes (e.g. G12D vs G12V in Kras).  
+
+From Fig \ref{fig:risByAminoAcid} we observe that Kras, Braf, and Nras mutated samples have a signifantly elevated RIS compared to wild-type (p = 1.14e-15, 1.68e-04, and 8.54e-08, respectively,  Mann-Whitney test).  Moreover, we observe that the canonical mutations of codon 12, 13, 61, and 146 have high RIS, with the exception of G13C.  Interestingly, K117N and Q22K have high RIS and may be putative activating mutations.  While Braf V600E shows a high RIS, it demonstrates an overall lower RIS than Kras (p=.0033) and Nras (p=.006).  [Reference how Braf is downstream of Kras/Nras along the canonical signalling pathway, which would explain overall lower RIS???] We note that many "wild-type" samples are reported to have a high RIS, suggesting there may be alternative (and yet to be discovered) mechanisms for Ras pathway activation beyond the canonical Braf, Kras, and Nras mutations.
+
+\begin{figure}[h]
+\centering
+\includegraphics{plots/tcga_aminoacid_ris_kras_braf.pdf}
+\caption{Predicted RIS by amino acide changes in TCGA CRC data set}
+\label{fig:risByAminoAcid}
+\end{figure}
+
+Although PIK3CA mutations are not mutually exclusive with Kras/Braf/Nras mutations, studies [citations] have suggested that it may have an activating effect within the Ras signalling pathway.  We plot the distribution of RIS per PIK3CA exon mutations.  We observe that RIS is significantly lower in (PIK3CA+,Ras WT) samples relative to (PIK3CA+,Ras+) mutants (Fig \ref{fig:risPik3caByExon}, p=.006, Mann-Whitney).  This suggests that PIK3CA mutations do not have the same effect on overall pathway activation compared to canonical Ras (Kras/Braf/Nras) mutations.
+
+\begin{figure}[h]
+\centering
+\includegraphics{plots/tcga_pik3ca_exon_ris.pdf}
+\caption{Predicted RIS by PIK3CA exon}
+\label{fig:risPik3caByExon}
+\end{figure}
+
+We next look at whether PIK3CA and Kras together have an additive effect in producing an overal RIS.  We compare PIK3CA/Kras double mutants (PIK3CA+,Kras+) with (PIK3CA-, Kras+) (Fig \ref{fig:risByGene}), and observe no significant difference (p > .2, Mann-Whitney).  
+
+\begin{figure}[h]
+\centering
+\includegraphics{plots/tcga_kras_braf_hras_pik3ca.pdf}
+\caption{Predicted RIS by gene mutation.  No significant different in RIS is found between Kras+,PIK3CA- with Kras+/PIK3CA+ (p > .2, Mann-Whitney)}
+\label{fig:risByGene}
+\end{figure}
+
+\subsection*{RNAseq vs Microarray Model Comparison}
+We had previously shown that our Ras model can be robustly applied across different microarray technologies (Affymetrix and Agilent).  With the availability of RNAseq within TCGA, we can assess the performance of our model using sequencing based assays.  Since data normalization of RNAseq data remains an area of active research, we compare three different normalization schemes: RPKM \cite{Mortazavi2008}, RPKM with quantile normalization, and conditional quantile normalization \cite{Hansen2012}.  Given evidence in the previous section that Braf and Nras are Ras pathway activators, we include these mutations - in addition to Kras - in our evaluation criteria.  Since we would like to obtain a distribution of performance values for each normalization method and platform, we bootstrap our training data (KFSYSCC data set) 100 times.
+
+In Fig \ref{fig:RNAseq.compare}, we observe that the array and sequence based technologies all produce similar performance results as measured by AUC.  Conditional quantile normalization has an overall higher AUC (median=.870), compared to RPKM (med=.848), RPKM with QN (med=.847), and agilent array (med=0.840).
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.5\textwidth]{plots/raspredict_rnaseq_vs_agilent.pdf}
+\caption{Comparison of RNAseq and array platforms for prediction of Ras mutations 
+(Braf,Nras,Kras activating mutation) }
+\label{fig:RNAseq.compare}
+\end{figure}
+
+\FloatBarrier
+
+\subsection*{Cell line models - drug sensitivity}
+
+Although efforts to target the Kras/Nras proteins directly have failed to translate into clinical applications, several drugs have been developed to target the Ras signalling pathway, either upstream within the EGFR domains, or downstream with the PI3K or MEK/ERK/MAPK domains.  We analyze whether our model of Ras activity corresponds to different drug sensitivities.  We apply our model to the 19 colon or rectal derived cell lines available from the Cancer Cell Line Encyclopedia (CCLE, \cite{Barretina2012}, and generate a RIS score for each cell line.  IC50 drug sensitivity measurements are provided for 21 drug compounds across all cell lines, which allow us to compute the correlation between RIS and drug sensitivity for each compound.  Results of this analysis are shown in Fig. \ref{fig:ccleDrugColonRASness}.
+
+We observe that significant correlations are found with the $\gamma$-Secretase inhibitor (L-685458, p=0.0015) and two MEK inhibitors (PD-0325901, p=0.0081 and AZD6244, p=0.0090, Spearman rank test).  $\gamma$-Secretase is a member of the Notch signalling pathway, and inhibition of $\gamma$-Secretase was recently shown to have a therapeutic effect in Kras-driven non-small cell lung carcinoma \cite{Maraver2012}. MEK is a component of the Ras pathway, downstream of Ras and Braf, and an activator of the mitogen-activated protein kinase (MAPK) signalling cascade via phosphorylation.  Therefore, the negative correlation between RIS and the IC50 values from MEK inhibitors is consistent with this pathway model.  Interestingly, the mutation status of Kras and/or Braf does not predict MEK response (p > .2).  
+
+\begin{figure}[h]
+\centering
+\includegraphics{plots/ccle_ic50_rasact_association_LARGE_INTESTINE.pdf}
+\caption{Association of Ras activity score with IC50 drug response in colorectal cell lines}
+\label{fig:ccleDrugColonRASness}
+\end{figure}
+
+We perform the same analysis using the 82 lung derived cell-line.  Despite the much larger number of samples, we observe no RIS-drug sensitivity correlation with appreciable significance in the lung cell lines (Fig \ref{fig:ccleDrugLungRASness}).  Again, this suggests the context specificity of our model.
+
+\begin{figure}[h]
+\centering
+\includegraphics{plots/ccle_ic50_rasact_association_LUNG.pdf}
+\caption{Association of Ras activity score with IC50 drug response in lung cell lines}
+\label{fig:ccleDrugLungRASness}
+\end{figure}
+
+As further validation of the MEK association, we compare the gene expression patterns of xenograft models generated from pre- and post- exposure to the MEK inhibitor AZD6244.  Xenografts were derived from the two human colon cell lines, HCT116 (Kras mutant) and HKH2 (Kras wt).  We apply our Ras model to the 10 samples (1 removed from outlier analysis, see M.M.), and plot the RIS distributions according to treatment and mutation status (Fig \ref{fig:mekXenoModel}).
+
+As we would expect, the Kras+ samples have an overall higher RIS than the Kras wt samples within the control groups.  Moreover, we observe that the AZD6244/Kras+ samples have a lower RIS than the control/Kras+ samples (p=.083, Mann-Whitney).  This is consistent with the expected mechanism, whereby MEK inhibition results in an overall reduction of Ras pathway activity.
+
+\begin{figure}[h]
+\centering
+\includegraphics{plots/mek_mouse_xenograft.pdf}
+\caption{RIS in mouse xenografts pre- and post treatment with MEK inhibitor}
+\label{fig:mekXenoModel}
+\end{figure}
+
+\FloatBarrier
+
+\subsection*{RIS predicts response to Cetuximab}
+
+Activated Kras has been shown to render EGFR-targeted therapies ineffective [citation].  This has led to patient profiling of Kras mutation to determine eligibility for the EGFR inhibitor Cetuximab in metastatic CRC.  However, even in Kras wt patients, response to Cetuximab varies significantly, with only [need percentage] of patients showing response to therapy.  We investigate whether our RIS model improves the prediction of therapeutic response to Cetuximab over mutation status only.
+
+We observe that Cetuximab response is separated by RIS across all samples (Fig \ref{fig:cetuxKF}A, p=0.00198 kruskal-wallace test).  However, this separation may be largely explained through Kras mutation status.  To determine whether RIS improves prediction of response better than mutation status, we separately analyze the kras mutant and kras wild-type samples.  In both cases, we find that RIS predicts response in the kras wild-type cohort (p=0.048) and the kras mutant cohort (p=0.036), Fig \ref{fig:cetuxKF}B,C.  The latter case is particularly interesting, as it suggests our model can identify patients who may benefit from cetuximab treatment, but who are currently excluded from treatment protocols.
+
+\begin{figure}[h]
+\centering
+\includegraphics{plots/khambata_ford_cetuximab_response.pdf}
+\caption{Predicted Cetuximab Response, Khambata-Ford metastatic CRC. PD=Progressive disease, PR=Partial response, SD=Stable disease.}
+\label{fig:cetuxKF}
+\end{figure}
+
+We next validate our model using gene expression from primary CRC tumors, as well as xenograft models derived from human primary CRC tumors\cite{Julien2012}.  All xenograft models are assayed for response, and a subset of patient data are annotated with therapeutic response to Cetuximab.  Samples are also profiled for key genetic aberations (APC, Braf, Kras, PIK3CA), allowing us to compare response association to RIS and mutation status.  
+
+Results are shown in Fig {fig:xenoCetux}, broken into 4 groupings: "tumor" refers to direct profiling of human patient samples, and xenograft models are further broken in to early or late by the number of passages (early < 4 passages).  In all cases, RIS outperforms mutation status (kras or braf, pvalue reported in parentheses) in separating responders from  non-responders to Cetuximab.
+
+
+\begin{figure}[h]
+\centering
+\includegraphics{plots/xenomodel_primaryandmouse_cetux.pdf}
+\caption{Predicted Cetuximab Response, Tumor and Xenograft. "Tumor" refers to patient samples, and response to Cetuximab was ascertained from clinical response.  Xenograft response was measured by percent of tumor growth inhibition. "Late" and "early" xenografts refer to the number of passages, with early < 4 passages.  Parenthetical pvalues are the association between Cetuximab response and kras/braf mutation status (Fisher exact test)}
+\label{fig:xenoCetux}
+\end{figure}
+
+
+\FloatBarrier
+
+\section*{Discussion}
+
+\section*{Methods/Materials}
+
+\subsection*{Summary of CRC Data}
+
+\begin{center}
+  \begin{tabular}{ |l|l|l|l|l|l| }
+	\hline
+	Data set & Desc & N & Percent Mut & Synapse ID & Platform \\ \hline
+	KFSYSCC & Primary CRC & 290 & 39.7\% & SYN163118 & Affy U133Plus2 \\
+	Khambata & Metastatic CRC & 68 & 39.7\% & SYN140742 & Affy U133A \\
+	Gaedcke & Primary Rectal & 65 & 46.1\% & SYN140741 & Agilent \\
+	TCGA & Primary CRC & 223 & 34.4\% & SYN140743 & Agilent \\
+	\hline
+	\end{tabular}
+\end{center}
+
+\subsection*{Data normalization}
+All Affymetric data is normalized using RMA with quantile normalization \cite{Irizarry2003}.  Sample outliers were determined using principal components analysis, and removed from further analysis.  We adjusted all data by taking the residuals from a robust regression analysis, using as covariates batch, gender, and age (if present).  In the event of missing age data (TCGA), we impute age by building a predictive model of age from gene expression data using the data with annotated age.  Multiple probesets mapping to the same gene symbol are combined by computing the singular value decomposition of all matching probesets, and use the first eigen-gene as the representative gene-sample values. 
+
+\subsection*{Modeling Across Multiple Platforms}
+To handle non-overlapping gene profiles across multiple platforms, we first reduce the number of genes in the modeled data sets (training and validation) to the intersection of their common genes.  When applying a model to validation data sets, we first adjust each gene in each validation cohort to have the same mean and variance as the gene in the training cohort. 
+
+\subsection*{Description of the Penalized Regression Model}
+We build our penalized regression model using the ElasticNet model \cite{Zou2005},\cite{Friedman2010}.  The model
+takes the canonical form of a squared error loss function coupled with a penalty for model complexity:
+$$
+(\beta_0, \beta) = \mbox{argmin} \left[ \frac{1}{2N} \sum_{i=1}^N \left(y_i - \beta_0 - x_i^T\beta\right)^{2}
+ + \lambda P_{\alpha}(\beta) \right]
+$$
+where 
+$$
+P_{\alpha}(\beta) = (1-\alpha)||\beta||^2 + \alpha ||\beta||
+$$
+The $\alpha$ parameter controls the tradeoff controls the sparsity of the model, where $\alpha=0$ is
+equivalent to a ridge regression model and $\alpha=1$ is equivalent to a lasso regression model.  The $\lambda$
+parameters controls the overall penalization of the coefficients.  
+
+After extensive testing of the KFSYSCC data for prediction of Kras mutation, we find the optimal $\alpha$ parameter to be $\approx .1$.  We then fix this $\alpha$ term for all subsequent model building, and estimate the optimal $\lambda$ parameter each time using cross-validation, selecting the $\lambda$ that that is 1 standard deviation away from the $\lambda$ with the minimal error.
+
+\bibliography{ras}
+\bibliographystyle{abbrv}
+
+\section*{Supplemental Fig/Tables}
+
+\begin{figure}[ht]
+\centering
+\includegraphics{plots_lung/loboda_auc_model.pdf}
+\caption{Evaluation of loboda signature for prediction of Ras mutation in LUAD}
+\label{fig:lobodaInLung}
+\end{figure}
+
+\begin{center}
+  \begin{tabular}{ |l|r| }
+  \hline
+	Gene & Pvalue \\ \hline
+	CUBN & 0.0010 \\
+  HMCN1 & 0.0042 \\
+  SCN1A & 0.0045 \\
+  NCAPD3 & 0.0052 \\
+  PRDM2 & 0.0059 \\
+  CTNNB1 & 0.0079 \\
+  PZP & 0.0088 \\
+  SPTAN1 & 0.0088 \\
+	\hline
+	\end{tabular}
+  \caption{Mutated genes associated with RIS in TCGA Ras (kras/braf/nras) wild-type }
+\end{center}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ | l | r | } 
+\hline
+Pathway & Corrected p \\ \hline
+SABATES COLORECTAL ADENOMA UP                                & 1.04e-12 \\
+HOFFMANN IMMATURE TO MATURE B LYMPHOCYTE UP                  & 1.01e-07 \\
+SMID BREASTCANCER  RELAPSE INBONE UP                        & 4.22e-07 \\
+BROWNE HCMV INFECTION 10HR UP                                & 4.46e-07 \\
+WANG BARRETTS ESOPHAGUS ANDESOPHAGUS CANCER UP              & 1.03e-05 \\
+REACTOME CLASS C3 METABOTROPIC GLUTAMATE PHEROMONE RECEPTORS & 1.73e-05 \\
+REACTOME AMINE COMPOUND SLC TRANSPORTERS                     & 2.22e-05 \\
+EINAV INTERFERON SIGNATURE IN CANCER                         & 3.30e-05 \\
+SCHUETZ BREAST CANCER DUCTAL INVASIVE DN                     & 3.35e-05 \\
+RASHI RESPONSE TO IONIZING RADIATION 6                       & 5.12e-05 \\
+  \hline
+\end{tabular}
+\caption{Top gene sets / pathways explaining RIS conditioned on ras mutation status.  We report the bonferroni
+pvalue adjusted significance of association.}
+\end{table}
+
+
+\begin{figure}[ht]
+\centering
+\includegraphics{plots/sabates_adenoma_pathway_vs_rasness.pdf}
+\caption{Large variation of RIS beyond Ras mutation status is explained by signature derived
+from comparison of normal and adenoma colon tissue.}
+\end{figure}
+
+
+
+
+\begin{figure}[ht]
+\centering
+\includegraphics{plots/xeno_correction.pdf}
+\caption{Principal component analysis of CRC xenograft data.  Top PC dominated between mouse xenograft (red) and human array (black) array.  PC analysis is recomputed with top PC is removed.}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics{plots/xenomodel_primaryandmouse_cetux_loboda.pdf}
+\caption{Predicted Cetuximab Response, Tumor and Xenograft: Loboda Signature}
+\end{figure}
+
+
+\end{document}
