@@ -1,3 +1,8 @@
+## PROGRAM PULLING TOGETHER ALL ANALYSIS STEPS
+##
+## ORIGINATING ANALYST: JUSTIN GUINNEY
+## SUPPORTING ANALYST: BRIAN BOT
+#####
 
 ES <- function(scoreList, gsets){
 	all.genes <- sort(unique(c(unlist(sapply(scoreList, names)))))

@@ -1,19 +1,27 @@
+## PROGRAM PULLING TOGETHER ALL ANALYSIS STEPS
+##
+## ORIGINATING ANALYST: JUSTIN GUINNEY
+## SUPPORTING ANALYST: BRIAN BOT
+#####
 
-library(parallel)
-library(GSVA)
-library(IlluminaHumanMethylation27k.db)
-library(limma)
-library(edgeR)
-library(cqn)
-library(survival)
-library(hgu133plus2.db)
-library(org.Hs.eg.db)
+require(rGithubClient)
+require(parallel)
+require(GSVA)
+require(IlluminaHumanMethylation27k.db)
+require(limma)
+require(edgeR)
+require(cqn)
+require(survival)
+require(hgu133plus2.db)
+require(org.Hs.eg.db)
 
-source("code/util_functions.R")
-source("code/data_functions.R")
-source("code/model_functions.R")
+## PULL IN THE PROJECT REPOSITORY IN ORDER TO SOURCE FUNCTIONS VIA GITHUB
+rasRepo <- getRepo("Sage-Bionetworks/CRC-RASness")
+sourceRepoFile(rasRepo, "functions/util_functions.R")
+sourceRepoFile(rasRepo, "functions/data_functions.R")
+sourceRepoFile(rasRepo, "functions/model_functions.R")
 
-# global variables
+# GLOBAL VARIABLES WHICH DEFINE CANONICAL MUTATIONS PER GENE
 canonical.kras <- c("kras.12","kras.13","kras.61","kras.146")
 canonical.braf <- c("braf.600")
 canonical.hras <- c("hras.G12","hras.G13")
@@ -1748,7 +1756,7 @@ compute_ccle_drug_response_revised <- function(sample.origin="LARGE_INTESTINE"){
 
 find_methylation_rasact_pairs <- function(wt.ras_act.threshold=.4, gene.plots=c("RASSF1","STK11")){
 	
-	library(IlluminaHumanMethylation27k.db)
+	require(IlluminaHumanMethylation27k.db)
 	cpgSymbols <- as.list(IlluminaHumanMethylation27kSYMBOL)
 	
 	
@@ -1825,7 +1833,7 @@ find_methylation_rasact_pairs <- function(wt.ras_act.threshold=.4, gene.plots=c(
 
 find_methylation_rasact_pairs_3 <- function(){
 	
-	library(IlluminaHumanMethylation27k.db)
+	require(IlluminaHumanMethylation27k.db)
 	cpgSymbols <- as.list(IlluminaHumanMethylation27kSYMBOL)
 	
 	rasness <- read.table("tcga_crc_ras_scores.txt",sep="\t",header=F)
@@ -1870,7 +1878,7 @@ find_methylation_rasact_pairs_3 <- function(){
 
 find_methylation_rasact_pairs_2 <- function(){
 	
-	library(IlluminaHumanMethylation27k.db)
+	require(IlluminaHumanMethylation27k.db)
 	cpgSymbols <- as.list(IlluminaHumanMethylation27kSYMBOL)
 	
 	

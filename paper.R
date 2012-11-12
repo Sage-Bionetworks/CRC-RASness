@@ -1,15 +1,23 @@
+## PROGRAM PULLING TOGETHER ALL ANALYSIS STEPS
+##
+## ORIGINATING ANALYST: JUSTIN GUINNEY
+## SUPPORTING ANALYST: BRIAN BOT
+#####
 
-library(parallel)
-library(IlluminaHumanMethylation27k.db)
-library(limma)
-library(edgeR)
-library(cqn)
+require(parallel)
+require(rGithubClient)
+require(IlluminaHumanMethylation27k.db)
+require(limma)
+require(edgeR)
+require(cqn)
 
-source("code/util_functions.R")
-source("code/data_functions.R")
-source("code/model_functions.R")
+## PULL IN THE PROJECT REPOSITORY IN ORDER TO SOURCE FUNCTIONS VIA GITHUB
+rasRepo <- getRepo("Sage-Bionetworks/CRC-RASness")
+sourceRepoFile(rasRepo, "util_functions.R")
+sourceRepoFile(rasRepo, "data_functions.R")
+sourceRepoFile(rasRepo, "model_functions.R")
 
-# global variables
+# GLOBAL VARIABLES WHICH DEFINE CANONICAL MUTATIONS PER GENE
 canonical.kras <- c("kras.12","kras.13","kras.61","kras.146")
 canonical.braf <- c("braf.600")
 canonical.hras <- c("hras.G12","hras.G13")
@@ -418,7 +426,7 @@ compute_ras_signature_enrichment <- function(){
   make.roc.plot(7,sig="Bild")
   make.roc.plot(8,sig="Baker")
   plot(1:5,1:, type="n",axes=F,xlab="",ylab="")
- legend("topleft",
+  legend("topleft",
          legend=c("TCGA CRC",
                   "Khambata-Ford", 
                  "Gaedcke",
@@ -475,16 +483,8 @@ compute_kfsyscc_validation <- function(){
   tcga_eset <- getTCGACRC()
   tcga_eset <- tcga_eset[,!is.na(tcga_eset$kras)]
   
-  #all.lung <- getAllLung()
-  
   y_hats <- binomial_predict_EN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
                                 list(tcga_eset, khambata_eset, gaedcke_eset))$yhats
-  
-  #y_hats_lung <- binomial_predict_EN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
-   #                                  list(all.lung$tcga.luad, 
-    #                                      all.lung$battle,
-     #                                     all.lung$gse26939,
-      #                                    all.lung$chemores))$yhats
   
   auc_and_perf <- function(yhat, actual){
     pred <- prediction(yhat, actual)
@@ -514,29 +514,13 @@ compute_kfsyscc_validation <- function(){
          lty=1,lwd=1.5)
   
   dev.off()
-  
-  
-  tcgaluad_perf <- auc_and_perf(y_hats_lung[[1]], factor(all.lung$tcga.luad$kras))
-  battle_perf <- auc_and_perf(y_hats_lung[[2]], factor(all.lung$battle$KRAS=="Mutant"))
-  gse26939_perf <- auc_and_perf(y_hats_lung[[3]], factor(all.lung$gse26939$kras))
-  chemores_perf <- auc_and_perf(y_hats_lung[[4]], factor(all.lung$chemores$KRAS==1))
-  
  
   tmp <- list(tcga_perf, khambata_perf,gaedcke_perf)
-  tmp.lung <- list(tcgaluad_perf, battle_perf, gse26939_perf, chemores_perf)
   
   df <- data.frame(auc=unlist(sapply(tmp, function(x) format(x$auc,digits=3))), 
                    sens=unlist(sapply(tmp, function(x) format(x$sens,digits=3))),
                    spec=unlist(sapply(tmp, function(x) format(x$spec,digits=3))),
                    row.names=c("TCGA CRC","Khambata-Ford","Gaedcke"))
-  
-  df.lung <- data.frame(auc=unlist(sapply(tmp.lung, function(x) format(x$auc,digits=3))), 
-                        sens=unlist(sapply(tmp.lung, function(x) format(x$sens,digits=3))),
-                        spec=unlist(sapply(tmp.lung, function(x) format(x$spec,digits=3))),
-                        row.names=c("TCGA LUAD","Battle","Wilkderson","CHEMORES"))
-  
-  #addtable2plot(.4, .4, df, display.rownames=TRUE,hlines=TRUE)
- 
   
   return(list(tcga=tcga_perf$auc,KF=khambata_perf$auc,gaedcke=gaedcke_perf$auc))
 }

@@ -1,3 +1,9 @@
+## PROGRAM PULLING TOGETHER ALL ANALYSIS STEPS
+##
+## ORIGINATING ANALYST: JUSTIN GUINNEY
+## SUPPORTING ANALYST: BRIAN BOT
+#####
+
 library(multicore)
 library(GSVA)
 library(IlluminaHumanMethylation27k.db)

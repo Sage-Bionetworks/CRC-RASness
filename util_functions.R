@@ -1,3 +1,8 @@
+## PROGRAM PULLING TOGETHER ALL ANALYSIS STEPS
+##
+## ORIGINATING ANALYST: JUSTIN GUINNEY
+## SUPPORTING ANALYST: BRIAN BOT
+#####
 
 # create indices for merging across multiple data sets
 merge.across <- function(...){
@@ -44,8 +49,8 @@ extract.tcga.patientIds <- function(tcga_ids){
 		return (gsub("\\.","-", as.matrix(tcga_ids)))
 	}
 	
-	parts = strsplit(fixIds(tcga_ids),"-",fixed=TRUE)
-	patient_ids = sapply(parts,
+	parts <- strsplit(fixIds(tcga_ids),"-",fixed=TRUE)
+	patient_ids <- sapply(parts,
 			function(x){ paste(x[1],x[2],x[3],sep="-") },
 			simplify=TRUE)
 }
@@ -87,9 +92,9 @@ displayGenomicFeatures <- function(featureList,colorSchemes=NULL,max.sample.widt
 	makePlot <- function(FL, sampleWidthCount){
 		N.sample <- length(FL[[1]])
 		N.features <- length(FL)	
-		sample.space=5
-		feature.space=10
-		iconWidth=15
+		sample.space <- 5
+		feature.space <- 10
+		iconWidth <- 15
 		
 		maxWidth <- sampleWidthCount * (sample.space + iconWidth)
 		
@@ -132,8 +137,8 @@ displayGenomicFeatures <- function(featureList,colorSchemes=NULL,max.sample.widt
 
 GOenrichment <- function(geneSet, backgroundGenes,minSz=10,maxSz=300){
 	
-	library(org.Hs.eg.db)
-	library(GO.db)
+	require(org.Hs.eg.db)
+	require(GO.db)
 	
 	geneSetEg <- na.omit(unique(mget(geneSet,org.Hs.egSYMBOL2EG,ifnotfound=NA)))
 	backgroundEg <- na.omit(unique(mget(backgroundGenes, org.Hs.egSYMBOL2EG,ifnotfound=NA)))
