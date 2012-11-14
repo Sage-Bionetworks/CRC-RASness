@@ -348,7 +348,7 @@ ccle_model <- function(){
 	
 	#######################################
 	# gsva
-	gsets <- load.gmt.data("resources/c2.all.v3.0.symbols.gmt")
+	gsets <- loadGmtData("resources/c2.all.v3.0.symbols.gmt")
 	tcga.es <- gsva(tcga.luad.eset,gsets,min.sz=10,max.sz=500,parallel.sz=10)$es
 	tcga.kras.factor <- factor(patids %in% kras.mut.patients)
 	tcga.pvals <- apply(exprs(tcga.es), 1, function(x){
@@ -390,7 +390,7 @@ combined.gsea.analysis <- function(){
 	fit.2 <- eBayes(lmFit(tcga.luad.eset, model.matrix(~factor(patids %in% kras.mut.patients))))
 	fit.3 <- eBayes(lmFit(battle.pc1, model.matrix(~factor(battle$KRAS=="Mutant"))))
 	fit.4 <- eBayes(lmFit(chemores, model.matrix(~factor(chemores$KRAS==1))))
-	gsets <- load.gmt.data("resources/c2.all.v3.0.symbols.gmt")
+	gsets <- loadGmtData("resources/c2.all.v3.0.symbols.gmt")
 	
 	scores <- list(-log10(fit.1$p.value[,2]), -log10(fit.2$p.value[,2]), -log10(fit.3$p.value[,2]), -log10(fit.4$p.value[,2]))
 	es <- ES(scores, gsets)

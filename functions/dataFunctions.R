@@ -70,7 +70,7 @@ getTCGARasMuts <- function(){
 
 ## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE
 # getRASSigs <- function(){
-# 	load.gmt.data("resources/ras_signatures.gmt")
+# 	loadGmtData("resources/ras_signatures.gmt")
 # }
 
 getGaedcke <- function(){

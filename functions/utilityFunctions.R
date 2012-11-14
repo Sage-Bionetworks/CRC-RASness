@@ -5,33 +5,32 @@
 #####
 
 # create indices for merging across multiple data sets
-merge.across <- function(...){
+mergeAcross <- function(...){
   tmp <- list(...)
-  x.ids <- tmp[[1]]
+  xIds <- tmp[[1]]
   for(i in 2:length(tmp)){
-    x.ids <- intersect(x.ids, tmp[[i]])
+    xIds <- intersect(xIds, tmp[[i]])
   }
-  sapply(1:length(tmp), function(i){ match(x.ids, tmp[[i]]) })
+  sapply(1:length(tmp), function(i){ match(xIds, tmp[[i]]) })
 }
 
 
 
 buildTopTableFromCorrelationMatrix <- function(C, idxs, top=20){
-	lbls.col <- colnames(C)
-	lbls.row <- rownames(C)
-	N.row <- nrow(C)
-	N.col <- ncol(C)
+	lblsCol <- colnames(C)
+	lblsRow <- rownames(C)
+	nRow <- nrow(C)
+	nCol <- ncol(C)
 	
 	
-	c <- floor(idxs[1:top] / N.row)
-	r <- idxs[1:top] %% N.row
-	tbl <- cbind(lbls.col[c],lbls.row[r],C[idxs[1:top]])
+	c <- floor(idxs[1:top] / nRow)
+	r <- idxs[1:top] %% nRow
+	tbl <- cbind(lblsCol[c],lblsRow[r],C[idxs[1:top]])
 	tbl
-
 }
 
-load.gmt.data <- function(gmt.file.path){
-	tmp <- readLines(gmt.file.path)
+loadGmtData <- function(gmtFilePath){
+	tmp <- readLines(gmtFilePath)
 	gsets <- list()
 	for(i in 1:length(tmp)){
 		t <- strsplit(tmp[i],'\t')[[1]]
@@ -155,7 +154,6 @@ GOenrichment <- function(geneSet, backgroundGenes,minSz=10,maxSz=300){
 	for (i in 1:ni)
 	{
 		if (i%%1000==1) print(paste(i,"/",ni))
-		#gm <-  unique(get(gokeys[i],IlluminaHumanMethylation450kGO2ALLPROBES))
 		gm <- GOMap[[gokeys[i]]]
 		
 		gm <- intersect(gm, backgroundEg)

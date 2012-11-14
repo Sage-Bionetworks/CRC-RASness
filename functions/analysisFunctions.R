@@ -368,7 +368,7 @@ tcga.ras.mirna.diff.coexpr <- function(){
   r <- getRISandMut()
   load("data~/tcga_crc_mirnaseq.rda")
   eset <- getTCGACRC()
-  idxs <- merge.across(extract.tcga.patientIds(names(r$ris)),
+  idxs <- mergeAcross(extract.tcga.patientIds(names(r$ris)),
                 extract.tcga.patientIds(colnames(tcga.crc.mirnaseq)),
                        extract.tcga.patientIds(sampleNames(eset)))
   rasScore.m <- r$ris[idxs[,1]]
@@ -489,9 +489,9 @@ tcga.ras.mirna <- function(){
 tcga.ras.gsva <- function(){
 	r <- getRISandMut()
 	
-	gsets <- load.gmt.data("resources/c2.all.v3.0.symbols.gmt")
-	mir.gsets <- load.gmt.data("resources/c3.mir.v3.0.symbols.gmt")
-	tft.gsets <- load.gmt.data("resources/c3.tft.v3.0.symbols.gmt")
+	gsets <- loadGmtData("resources/c2.all.v3.0.symbols.gmt")
+	mir.gsets <- loadGmtData("resources/c3.mir.v3.0.symbols.gmt")
+	tft.gsets <- loadGmtData("resources/c3.tft.v3.0.symbols.gmt")
 	eset <- getTCGACRC()
 	es <- gsva(eset,gsets,min.sz=10,max.sz=500,parallel.sz=10)$es
 	

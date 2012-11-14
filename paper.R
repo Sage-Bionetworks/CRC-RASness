@@ -4,12 +4,13 @@
 ## SUPPORTING ANALYST: BRIAN BOT
 #####
 
-require(parallel)
+require(synapseClient)
 require(rGithubClient)
-require(IlluminaHumanMethylation27k.db)
+require(parallel)
 require(limma)
 require(edgeR)
 require(cqn)
+require(IlluminaHumanMethylation27k.db)
 
 ## PULL IN THE PROJECT REPOSITORY IN ORDER TO SOURCE FUNCTIONS VIA GITHUB
 rasRepo <- getRepo("Sage-Bionetworks/CRC-RASness")
