@@ -90,21 +90,21 @@ getCCLE <- function(){
 }
 
 
-## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE
+## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - study found -- no expression data
 # getEMEXP3549 <- function(){
 #   env <- new.env()
 #   load("data~/MEXP3549/MEXP3549_eset.rda", env)
 #   return (env$eset)
 # }
 
-## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE
+## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - syn372544
 # getEMEXP3557 <- function(){
 #   env <- new.env()
 #   load("data~/MEXP3557/MEXP3557_eset.rda", env)
 #   return (env$eset)
 # }
 
-## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE
+## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - syn202357
 # getEMEXP991 <- function(){
 #   annot <- read.table("data~/MEXP991/MEXP991.annotation.txt",sep="\t",as.is=TRUE,header=TRUE)
 #   env <- new.env()
@@ -112,7 +112,7 @@ getCCLE <- function(){
 #   return (list(eset=env$gene.eset, annot=annot))
 # }
 
-## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE
+## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - no study found
 # getEMTAB333 <- function(){
 # 	f <- list.files("data~/EMTAB333",pattern="LEM")
 # 	tmp <- read.table(paste("data~/EMTAB333/",f[1],sep=""),sep="\t",header=T,as.is=T)
