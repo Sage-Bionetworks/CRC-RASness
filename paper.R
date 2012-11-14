@@ -32,19 +32,19 @@ uterineAnalysis <- function(){
   entrez.ids <- gsub("(\\d*)_eg","\\1", featureNames(uterine.eset.eg))
   genes <- unlist(mget(entrez.ids, org.Hs.egSYMBOL, ifnotfound=NA))
   
-  tmp <- combine_probes_2_gene(exprs(uterine.eset.eg), genes)
+  tmp <- combineProbesToGene(exprs(uterine.eset.eg), genes)
   uterine.eset <- new("ExpressionSet",exprs=tmp)
   
   maf.entity <- loadEntity('syn350455')
   maf <- read.table(paste(maf.entity$cacheDir ,"/",maf.entity$files,sep=""),header=TRUE,sep="\t",quote="")
-  all.patients <- extract.tcga.patientIds(unique(maf$Tumor_Sample_Barcode))
-  kras.patients <- extract.tcga.patientIds(unique(maf[maf$Hugo_Symbol=="KRAS",]$Tumor_Sample_Barcode))
+  all.patients <- extractTcgaPatientIds(unique(maf$Tumor_Sample_Barcode))
+  kras.patients <- extractTcgaPatientIds(unique(maf[maf$Hugo_Symbol=="KRAS",]$Tumor_Sample_Barcode))
   
-  uterine.eset.m <- uterine.eset[, extract.tcga.patientIds(sampleNames(uterine.eset)) %in% all.patients]
+  uterine.eset.m <- uterine.eset[, extractTcgaPatientIds(sampleNames(uterine.eset)) %in% all.patients]
   
-  yhat <- binomial_predict_EN(kfsyscc_eset, factor(kfsyscc_eset$kras_status == "MUT"), 
+  yhat <- binomialPredictEN(kfsyscc_eset, factor(kfsyscc_eset$kras_status == "MUT"), 
                               list(uterine.eset.m))$yhats[[1]]
-  pred <- prediction(yhat, extract.tcga.patientIds(sampleNames(uterine.eset.m)) %in% kras.patients)
+  pred <- prediction(yhat, extractTcgaPatientIds(sampleNames(uterine.eset.m)) %in% kras.patients)
   auc <- performance(pred, 'auc')@y.values[[1]]
 }
 
@@ -80,10 +80,10 @@ crcXenoGraft <- function(){
   plot(pc.adj$v[,1], pc.adj$v[,2], col=(as.numeric(is.xeno)+1),xlab="PC1",ylab='PC2')
   dev.off()
   
-  yhat <- binomial_predict_EN(kfsyscc_eset, factor(kfsyscc_eset$kras_status == "MUT"), 
+  yhat <- binomialPredictEN(kfsyscc_eset, factor(kfsyscc_eset$kras_status == "MUT"), 
                               list(adj.eset))$yhats[[1]]
   
-  #yhat <- loboda_enrichment_method(adj.eset)
+  #yhat <- lobodaEnrichmentMethod(adj.eset)
   
   
   ## all data
@@ -169,7 +169,7 @@ mekInhibition <- function(){
   bad.idxs <- which(pc$v[,1] > .8)
   mekEset <- tmp[,-bad.idxs]
   
-  yhat <- binomial_predict_EN(kfsyscc_eset, factor(kfsyscc_eset$kras_status == "MUT"), 
+  yhat <- binomialPredictEN(kfsyscc_eset, factor(kfsyscc_eset$kras_status == "MUT"), 
                               list(mekEset))$yhats[[1]]
   
   mut.mask <- mekEset$Factor.Value.GENOTYPE == "Kras mutant"
@@ -208,7 +208,7 @@ getRISandMut <- function(){
   
   tcga_aa_mat <- getTCGARasMuts()
   
-  idxs <- match(extract.tcga.patientIds(rasness[,1]), rownames(tcga_aa_mat))
+  idxs <- match(extractTcgaPatientIds(rasness[,1]), rownames(tcga_aa_mat))
   rasScore.m <- rasness[!is.na(idxs),2]
   names(rasScore.m) <- rasness[!is.na(idxs),1]
   tcga_aa_mat.m <- tcga_aa_mat[na.omit(idxs),]
@@ -232,7 +232,7 @@ test_rasness_in_luad <- function(){
   idxs <- match(uniq_symbols, hgnc_symbols)
   luad_eset <- luad_eset[idxs,]
   featureNames(luad_eset) <- hgnc_symbols[idxs]
-  y_hats <- binomial_predict_EN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
+  y_hats <- binomialPredictEN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
                                 list(luad_eset))$yhats
   
   pred <- prediction(y_hats[[1]], list(as.logical(luad_eset$kras)))
@@ -265,7 +265,7 @@ compute_rnaseq_rasness <- function(){
   RPKM <- cbind(coad.env$RPKM, read.env$RPKM)
   Counts <- cbind(coad.env$Counts, read.env$Counts)
   
-  #idxs <- match(extract.tcga.patientIds(rownames(tcga_aa_mat)), extract.tcga.patientIds(colnames(RPKM)))
+  #idxs <- match(extractTcgaPatientIds(rownames(tcga_aa_mat)), extractTcgaPatientIds(colnames(RPKM)))
   #tcga_aa_mat.m <- tcga_aa_mat[!is.na(idxs),]
   #RPKM <- RPKM[, na.omit(idxs)]
   #Counts <- Counts[, na.omit(idxs)]
@@ -293,13 +293,13 @@ compute_rnaseq_rasness <- function(){
       eset <- matrix
     }else{
       # remove duplicate rows
-      idxs <- match(unique(extract.tcga.patientIds(colnames(matrix))),
-                    extract.tcga.patientIds(colnames(matrix)))
+      idxs <- match(unique(extractTcgaPatientIds(colnames(matrix))),
+                    extractTcgaPatientIds(colnames(matrix)))
       eset <- new("ExpressionSet",exprs=matrix[, idxs])
     }
     
     
-    idxs <- match(extract.tcga.patientIds(rownames(tcga_aa_mat)), extract.tcga.patientIds(sampleNames(eset)))
+    idxs <- match(extractTcgaPatientIds(rownames(tcga_aa_mat)), extractTcgaPatientIds(sampleNames(eset)))
     tcga_aa_mat.m <- tcga_aa_mat[!is.na(idxs),]
     eset.m <- eset[, na.omit(idxs)]
     idxs <- pmatch(canonical, colnames(tcga_aa_mat.m))
@@ -317,7 +317,7 @@ compute_rnaseq_rasness <- function(){
     idx <- idx
     N <- dim(kfsyscc_eset)[2]
     mask <- sample(N, round(.66 * N), replace=TRUE)
-    y_hats <- binomial_predict_EN(kfsyscc_eset[,mask], factor(kfsyscc_eset$kras_status)[mask], 
+    y_hats <- binomialPredictEN(kfsyscc_eset[,mask], factor(kfsyscc_eset$kras_status)[mask], 
                                   testEsets=list(rpkm$eset, rpkm.quant$eset, rpkm.cqn$eset, agilent$eset),seed=(idx+1),alpha=.1)$yhats
     aucs <- NULL
     for(i in 1:length(y_hats)){
@@ -355,13 +355,13 @@ compute_ras_signature_enrichment <- function(){
   tcga_eset <- tcga_eset[,!is.na(tcga_eset$kras)]
   
   kfsyscc_es_ras <- gsva(kfsyscc_eset, ras_gsets,min.sz=10,max.sz=500)$es
-  kfsyscc_es <- t(scale(t(rbind(exprs(kfsyscc_es_ras), khambata_enrichment_method(kfsyscc_eset)))))
+  kfsyscc_es <- t(scale(t(rbind(exprs(kfsyscc_es_ras), khambataEnrichmentMethod(kfsyscc_eset)))))
   khambata_es_ras <- gsva(khambata_eset,ras_gsets,min.sz=10,max.sz=500)$es
-  khambata_es <- t(scale(t(rbind(exprs(khambata_es_ras), khambata_enrichment_method(khambata_eset)))))
+  khambata_es <- t(scale(t(rbind(exprs(khambata_es_ras), khambataEnrichmentMethod(khambata_eset)))))
   gaedcke_es_ras <- gsva(gaedcke_eset,ras_gsets,min.sz=10,max.sz=500)$es
-  gaedcke_es <- t(scale(t(rbind(exprs(gaedcke_es_ras), khambata_enrichment_method(gaedcke_eset)))))
+  gaedcke_es <- t(scale(t(rbind(exprs(gaedcke_es_ras), khambataEnrichmentMethod(gaedcke_eset)))))
   tcga_es_ras <- gsva(tcga_eset, ras_gsets, min.sz=10,max.sz=500)$es
-  tcga_es <- t(scale(t(rbind(exprs(tcga_es_ras), khambata_enrichment_method(tcga_eset)))))
+  tcga_es <- t(scale(t(rbind(exprs(tcga_es_ras), khambataEnrichmentMethod(tcga_eset)))))
   
   
   makeSigPlot <- function(sigIdx, title=FALSE,sig=""){
@@ -448,7 +448,7 @@ compute_kfsyscc_bootstrapped_aucs <- function(nbootstraps=100,num.processors=5){
   splitAndTest <- function(i){
     idxs <- sample(N, N/2)
     kras <- factor(eset$kras_status)
-    r <- binomial_predict_EN(eset[,idxs], kras[idxs], list(eset[,-idxs]))
+    r <- binomialPredictEN(eset[,idxs], kras[idxs], list(eset[,-idxs]))
     y_hat <- r$yhats[[1]]
     selectedFeatures <- r$featureVec[as.logical(coefficients(r$model) != 0)]
     auc <- performance(prediction(y_hat, factor(kras[-idxs])), 'auc')@y.values[[1]]
@@ -484,7 +484,7 @@ compute_kfsyscc_validation <- function(){
   tcga_eset <- getTCGACRC()
   tcga_eset <- tcga_eset[,!is.na(tcga_eset$kras)]
   
-  y_hats <- binomial_predict_EN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
+  y_hats <- binomialPredictEN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
                                 list(tcga_eset, khambata_eset, gaedcke_eset))$yhats
   
   auc_and_perf <- function(yhat, actual){
@@ -531,23 +531,23 @@ compte_tcga_rasact_differences_for_ras_aminoacids <- function(){
   kfsyscc_eset <- getKFSYSCC()
   tcga_eset <- getTCGACRC()
   maf <- getCleanTcgaMaf()
-  rasScore <- binomial_predict_EN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
+  rasScore <- binomialPredictEN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
                                   list(tcga_eset))$yhats[[1]]
   
   
-  overlap.pats <- intersect(extract.tcga.patientIds(sampleNames(tcga_eset)), 
-                            unique(extract.tcga.patientIds(unique(maf$Tumor_Sample_Barcode))))
+  overlap.pats <- intersect(extractTcgaPatientIds(sampleNames(tcga_eset)), 
+                            unique(extractTcgaPatientIds(unique(maf$Tumor_Sample_Barcode))))
   
-  tcga_eset_m <- tcga_eset[,extract.tcga.patientIds(sampleNames(tcga_eset)) %in% overlap.pats]
-  rasScore_m <- rasScore[extract.tcga.patientIds(sampleNames(tcga_eset)) %in% overlap.pats,1]
-  maf_m <- maf[extract.tcga.patientIds(maf$Tumor_Sample_Barcode) %in% overlap.pats,]
+  tcga_eset_m <- tcga_eset[,extractTcgaPatientIds(sampleNames(tcga_eset)) %in% overlap.pats]
+  rasScore_m <- rasScore[extractTcgaPatientIds(sampleNames(tcga_eset)) %in% overlap.pats,1]
+  maf_m <- maf[extractTcgaPatientIds(maf$Tumor_Sample_Barcode) %in% overlap.pats,]
   
-  kras_pats <- extract.tcga.patientIds(maf_m[maf_m$Hugo_Symbol == "KRAS",]$Tumor_Sample_Barcode)
-  nras_pats <- extract.tcga.patientIds(maf_m[maf_m$Hugo_Symbol == "NRAS",]$Tumor_Sample_Barcode)
-  braf_pats <- extract.tcga.patientIds(maf_m[maf_m$Hugo_Symbol == "BRAF",]$Tumor_Sample_Barcode)
+  kras_pats <- extractTcgaPatientIds(maf_m[maf_m$Hugo_Symbol == "KRAS",]$Tumor_Sample_Barcode)
+  nras_pats <- extractTcgaPatientIds(maf_m[maf_m$Hugo_Symbol == "NRAS",]$Tumor_Sample_Barcode)
+  braf_pats <- extractTcgaPatientIds(maf_m[maf_m$Hugo_Symbol == "BRAF",]$Tumor_Sample_Barcode)
   ras_pats <- c(kras_pats, nras_pats, braf_pats)
   braf__kras_wt <- setdiff(braf_pats, kras_pats)
-  pik3ca_pats <- extract.tcga.patientIds(maf_m[maf_m$Hugo_Symbol == "PIK3CA",]$Tumor_Sample_Barcode)
+  pik3ca_pats <- extractTcgaPatientIds(maf_m[maf_m$Hugo_Symbol == "PIK3CA",]$Tumor_Sample_Barcode)
   pik3ca__ras_wt <- setdiff(pik3ca_pats, ras_pats)
   pik3ca__ras_mut <- intersect(pik3ca_pats, ras_pats)
   
@@ -569,9 +569,9 @@ compte_tcga_rasact_differences_for_ras_aminoacids <- function(){
   aa.changes <- c(kras.aa.changes, braf.aa.changes,nras.aa.changes)
   
   aa.factor <- rep("WT", ncol(tcga_eset_m))
-  names(aa.factor) <- extract.tcga.patientIds(sampleNames(tcga_eset_m))
+  names(aa.factor) <- extractTcgaPatientIds(sampleNames(tcga_eset_m))
   for(aa in names(aa.changes)){
-    pats <- extract.tcga.patientIds(both.maf[both.maf$AAChange == aa,]$Tumor_Sample_Barcode)
+    pats <- extractTcgaPatientIds(both.maf[both.maf$AAChange == aa,]$Tumor_Sample_Barcode)
     aa.factor[pats] <- aa
   }
   
@@ -598,9 +598,9 @@ compte_tcga_rasact_differences_for_ras_aminoacids <- function(){
   pik3ca.maf <- maf_m[maf_m$Hugo_Symbol == "PIK3CA" ,]
   pik3ca.exon.factor <- rep("WT", ncol(tcga_eset_m))
   pik3ca.exon.changes <- sort(table(pik3ca.maf$Exon),decreasing=TRUE)
-  names(pik3ca.exon.factor) <- extract.tcga.patientIds(sampleNames(tcga_eset_m))
+  names(pik3ca.exon.factor) <- extractTcgaPatientIds(sampleNames(tcga_eset_m))
   for(exon in names(pik3ca.exon.changes)){
-    pats <- extract.tcga.patientIds(pik3ca.maf[pik3ca.maf$Exon == exon,]$Tumor_Sample_Barcode)
+    pats <- extractTcgaPatientIds(pik3ca.maf[pik3ca.maf$Exon == exon,]$Tumor_Sample_Barcode)
     pik3ca.exon.factor[pats] <- exon
   }
   
@@ -627,7 +627,7 @@ compte_tcga_rasact_differences_for_ras_aminoacids <- function(){
   dev.off()
   
   tmp.factor <- rep("WT", ncol(tcga_eset_m))
-  names(tmp.factor) <- extract.tcga.patientIds(sampleNames(tcga_eset_m))
+  names(tmp.factor) <- extractTcgaPatientIds(sampleNames(tcga_eset_m))
   tmp.factor[names(tmp.factor) %in% kras_pats] <- "kras"
   tmp.factor[names(tmp.factor) %in% braf_pats] <- "braf"
   tmp.factor[names(tmp.factor) %in% nras_pats] <- "nras"
@@ -666,11 +666,11 @@ compte_tcga_rasact_differences_for_ras_aminoacids <- function(){
   #################################
   # look for novel mutations associated in Ras WT samples
   wt_pats <- names(aa.factor)[aa.factor == "WT"]
-  maf_wt <- maf_m[extract.tcga.patientIds(maf_m$Tumor_Sample_Barcode) %in% wt_pats 
+  maf_wt <- maf_m[extractTcgaPatientIds(maf_m$Tumor_Sample_Barcode) %in% wt_pats 
                   & maf_m$Variant_Classification %in% c("Missense_Mutation","Nonsense_Mutation"),]
-  maf_patids <- extract.tcga.patientIds(maf_wt$Tumor_Sample_Barcode)
+  maf_patids <- extractTcgaPatientIds(maf_wt$Tumor_Sample_Barcode)
   rasScore_wt <- rasScore_m[aa.factor == "WT"]
-  rasScore_wt_patids <- extract.tcga.patientIds(names(rasScore_wt))
+  rasScore_wt_patids <- extractTcgaPatientIds(names(rasScore_wt))
   #all.genes <- unique(maf_wt$Hugo_Symbol)
   #pvals <- rep(NA, length(all.genes))
   #names(pvals) <- all.genes
@@ -713,7 +713,7 @@ compute_ccle_drug_response <- function(sample.origin="LARGE_INTESTINE"){
     sub_eset <- ccle_eset
     sub_response <- pData(ccle_response)
   }
-  RASact <- binomial_predict_EN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
+  RASact <- binomialPredictEN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
                                 list(sub_eset))$yhats[[1]]
   
   stats <- apply(sub_response[mask,], 2, function(x){ cor.test(RASact[mask], x,method="spearman")$estimate })
@@ -777,7 +777,7 @@ compute_ccle_drug_response_metagenomics <- function(sample.origin="LARGE_INTESTI
   }else{
     sub_eset <- ccle
   }
-  RASact <- binomial_predict_EN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
+  RASact <- binomialPredictEN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
                                 list(sub_eset))$yhats[[1]]
   
   stats <- apply(pData(sub_eset), 2, function(x){ cor.test(RASact, x,method="spearman")$estimate })
@@ -792,7 +792,7 @@ predictCetuximabResponse <- function(){
   kfsyscc_eset <- getKFSYSCC()
   khambata_eset <- getKhambata()
   
-  y_hat <- binomial_predict_EN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
+  y_hat <- binomialPredictEN(kfsyscc_eset, factor(kfsyscc_eset$kras_status=="MUT"), 
                                list(khambata_eset))$yhats[[1]]
   not_utd_mask <- khambata_eset$Best != "UTD"
   wt.mask <- khambata_eset$kras_status == "WT"
@@ -866,7 +866,7 @@ checkLobodaCCLEPredictions <- function(sample.origin=NULL){
     sub_response <- pData(ccle_response)
   }
   
-  RASact <- loboda_enrichment_method(sub_eset)
+  RASact <- lobodaEnrichmentMethod(sub_eset)
   
   stats <- apply(sub_response, 2, function(x){ cor.test(RASact, x,method="spearman")$estimate })
   pvals <- apply(sub_response, 2, function(x){ cor.test(RASact, x,method="spearman")$p.value })

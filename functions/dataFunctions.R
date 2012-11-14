@@ -33,21 +33,21 @@ getOrFetch <- function(var, fetchExpr){
 
 ## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE
 # getCleanTcgaMaf <- function(){
-#   coad.illumina <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_COAD.IlluminaGA_DNASeq.1.maf",
+#   coadIllumina <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_COAD.IlluminaGA_DNASeq.1.maf",
 #                               sep="\t",quote="",as.is=TRUE,header=TRUE,comment.char="",skip=1,fill=TRUE)
-#   read.illumina <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_READ.IlluminaGA_DNASeq.1.maf",
+#   readIllumina <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_READ.IlluminaGA_DNASeq.1.maf",
 #                               sep="\t",quote="",as.is=TRUE,header=TRUE,comment.char="",skip=1,fill=TRUE)
-#   all.illumina <- rbind(coad.illumina, read.illumina)
+#   allIllumina <- rbind(coad.illumina, read.illumina)
 #   
-#   coad.solid <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_COAD.SOLiD_DNASeq.1.maf",
+#   coadSolid <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_COAD.SOLiD_DNASeq.1.maf",
 #                            sep="\t",quote="",as.is=TRUE,header=TRUE,comment.char="",skip=1,fill=TRUE)
-#   read.solid <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_READ.SOLiD_DNASeq.1.maf",
+#   readSolid <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_READ.SOLiD_DNASeq.1.maf",
 #                            sep="\t",quote="",as.is=TRUE,header=TRUE,comment.char="",skip=1,fill=TRUE)
-#   all.solid <- rbind(coad.solid, read.solid)
+#   allSolid <- rbind(coad.solid, read.solid)
 #   
-#   stopifnot(all(colnames(all.illumina) == colnames(all.solid)))
+#   stopifnot(all(colnames(allIllumina) == colnames(allSolid)))
 #   
-#   maf <- rbind(all.illumina, all.solid)
+#   maf <- rbind(allIllumina, allSolid)
 #   
 #   return (maf)
 # }
@@ -86,7 +86,7 @@ getKFSYSCC <- function(){
 }
 
 getCCLE <- function(){
-	getOrFetch("CCLE", make_ccle_eset())
+	getOrFetch("CCLE", makeCcleEset())
 }
 
 
@@ -94,14 +94,14 @@ getCCLE <- function(){
 # getEMEXP3549 <- function(){
 #   env <- new.env()
 #   load("data~/MEXP3549/MEXP3549_eset.rda", env)
-#   return (env$eset)
+#   return(env$eset)
 # }
 
 ## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - syn372544
 # getEMEXP3557 <- function(){
 #   env <- new.env()
 #   load("data~/MEXP3557/MEXP3557_eset.rda", env)
-#   return (env$eset)
+#   return(env$eset)
 # }
 
 ## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - syn202357
@@ -109,7 +109,7 @@ getCCLE <- function(){
 #   annot <- read.table("data~/MEXP991/MEXP991.annotation.txt",sep="\t",as.is=TRUE,header=TRUE)
 #   env <- new.env()
 #   load(file="data~/MEXP991/MEXP991_eset.rda", env)
-#   return (list(eset=env$gene.eset, annot=annot))
+#   return(list(eset=env$gene.eset, annot=annot))
 # }
 
 ## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - no study found
@@ -125,41 +125,41 @@ getCCLE <- function(){
 # 	sdrf <- read.table("data~/EMTAB333/E-MTAB-333.sdrf.txt",header=T,sep="\t",as.is=T,comment="")
 # 	rownames(sdrf) <- sdrf$Array.Data.File
 # 	idxs <- match(colnames(M),rownames(sdrf))
-# 	M.m <- M[,!is.na(idxs)]
-# 	sdrf.m <- sdrf[na.omit(idxs),]
-# 	eset <- new("ExpressionSet",exprs=M.m)
-# 	pData(eset) <- sdrf.m
+# 	Mm <- M[,!is.na(idxs)]
+# 	sdrfM <- sdrf[na.omit(idxs),]
+# 	eset <- new("ExpressionSet",exprs=Mm)
+# 	pData(eset) <- sdrfM
 # 	
 # 	adf <- read.table("data~/EMTAB333/A-MEXP-503.adf.txt",sep="\t",header=T,as.is=T,skip=21,quote="")
 # 	
 # 	idxs <- match(featureNames(eset), adf$Reporter.Name)
-# 	eset.m <- eset[!is.na(idxs),]
-# 	adf.m <- adf[na.omit(idxs),]
+# 	esetM <- eset[!is.na(idxs),]
+# 	adfM <- adf[na.omit(idxs),]
 # 	
-# 	genes <- adf.m$Comment.AEReporterName.
-# 	tmp <- combine_probes_2_gene(exprs(eset.m), genes)
-# 	exprs(eset.m) <- tmp
-# 	eset.m
+# 	genes <- adfM$Comment.AEReporterName.
+# 	tmp <- combineProbesToGene(exprs(esetM), genes)
+# 	exprs(esetM) <- tmp
+# 	esetM
 # }
 
-make_ccle_eset <- function(){
-	ccle_entity_expr <- loadEntity(getEntity(SYN_CCLE_EXPR_ID))$objects$exprSet
-	ccle_entity_response <- loadEntity(getEntity(SYN_CCLE_DRUGRESPONSE_ID))$objects$responseADF
-	ccle_entity_mut <- loadEntity(getEntity(SYN_CCLE_MUT_ID))$objects$oncomapSet
+makeCcleEset <- function(){
+	ccleEntityExpr <- loadEntity(getEntity(SYN_CCLE_EXPR_ID))$objects$exprSet
+	ccleEntityResponse <- loadEntity(getEntity(SYN_CCLE_DRUGRESPONSE_ID))$objects$responseADF
+	ccleEntityMut <- loadEntity(getEntity(SYN_CCLE_MUT_ID))$objects$oncomapSet
 	
 	# merge expr with mut
-	idxs <- match(sampleNames(ccle_entity_expr), sampleNames(ccle_entity_mut))
+	idxs <- match(sampleNames(ccleEntityExpr), sampleNames(ccleEntityMut))
 	
-	tmp <- ccle_entity_expr[,!is.na(idxs)]
-	pData(tmp) <- data.frame(t(exprs(ccle_entity_mut[,na.omit(idxs)])))
+	tmp <- ccleEntityExpr[,!is.na(idxs)]
+	pData(tmp) <- data.frame(t(exprs(ccleEntityMut[,na.omit(idxs)])))
 	
-	ccle_entity_expr <- tmp
+	ccleEntityExpr <- tmp
 	
-	idxs <- match(sampleNames(ccle_entity_expr), sampleNames(ccle_entity_response))
+	idxs <- match(sampleNames(ccleEntityExpr), sampleNames(ccleEntityResponse))
 	
-	ccle_eset <- ccle_entity_expr[,!is.na(idxs)]
-	ccle_response <- ccle_entity_response[na.omit(idxs)]
-	(list(ccle_eset, ccle_response))
+	ccleEset <- ccleEntityExpr[,!is.na(idxs)]
+	ccleResponse <- ccleEntityResponse[na.omit(idxs)]
+	(list(ccleEset, ccleResponse))
 }
 
 ## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE
@@ -168,29 +168,29 @@ make_ccle_eset <- function(){
 # 	expr <- getOrFetch("sanger.celline.expr",loadEntity("syn210931")$objects$eSet_expr)
 # 	drug <- getOrFetch("sanger.celline.drug",pData(loadEntity(getEntity("syn220680"))$objects$adf_drug))
 # 	idxs <- match(rownames(drug), sampleNames(expr))
-# 	drug.m <- drug[!is.na(idxs),]
-# 	expr.m <- expr[, na.omit(idxs)]
-# 	colnames(drug.m) <- paste("DRUG.",colnames(drug.m),sep="")
+# 	drugM <- drug[!is.na(idxs),]
+# 	exprM <- expr[, na.omit(idxs)]
+# 	colnames(drugM) <- paste("DRUG.",colnames(drugM),sep="")
 # 	
 # 	meta <- read.table("resources/Sanger_affy_n798_sample_info_published.txt",sep="\t",header=T,fill=TRUE,as.is=TRUE,quote="")
-# 	idxs <-  match(rownames(drug.m), gsub("-","",meta$SampleName))
-# 	clinical.m <- cbind(drug.m, meta[idxs,])
-# 	pData(expr.m) <- clinical.m
-# 	return (expr.m)
+# 	idxs <-  match(rownames(drugM), gsub("-","",meta$SampleName))
+# 	clinical.m <- cbind(drugM, meta[idxs,])
+# 	pData(exprM) <- clinical.m
+# 	return (exprM)
 # }
 
-getCCLE_MetaGenomics <- function(){
-  pharmaDat <- getCCLEPharma_MetaGenomics()
-  exprDat <- getCCLEExpr_MetaGenomics()
+getCCLEmetaGenomics <- function(){
+  pharmaDat <- getCCLEPharmaMetaGenomics()
+  exprDat <- getCCLEExprMetaGenomics()
   
   idxs <- match(rownames(pharmaDat), sampleNames(exprDat))
-  pharmaDat.m <- as.data.frame(pharmaDat[!is.na(idxs),])
-  exprDat.m <- exprDat[, na.omit(idxs)]
-  eset <- new("ExpressionSet", expr=exprs(exprDat.m), phenoData=new("AnnotatedDataFrame",data=pharmaDat.m))
+  pharmaDatM <- as.data.frame(pharmaDat[!is.na(idxs),])
+  exprDatM <- exprDat[, na.omit(idxs)]
+  eset <- new("ExpressionSet", expr=exprs(exprDatM), phenoData=new("AnnotatedDataFrame",data=pharmaDatM))
   eset
 }
 
-getCCLEPharma_MetaGenomics <- function(){
+getCCLEPharmaMetaGenomics <- function(){
   cellLines <- loadEntity('syn1417611')$objects$cellLines
   
   # Load the information on the pharmacologic profiling data
@@ -220,10 +220,10 @@ getCCLEPharma_MetaGenomics <- function(){
     ccleMat[cclePharma$NAME[i], cclePharma$DRUG[i]] <- cclePharma$activityArea[i]
   }
   
-  ccleMat
+  return(ccleMat)
 }
 
-getCCLEExpr_MetaGenomics <- function(){
+getCCLEExprMetaGenomics <- function(){
   
   averageReplicates <- function(dat,map){
     ids <- which(map != "notAvailable")
@@ -241,7 +241,7 @@ getCCLEExpr_MetaGenomics <- function(){
         tmp[,i] <- rowMeans(dat[,map2row[[i]]])
       }
     }
-    tmp
+    return(tmp)
   }
   
   getExpr <- function(mapId, dataId){
@@ -258,15 +258,15 @@ getCCLEExpr_MetaGenomics <- function(){
     map <- matchColumns(mapDat, cellLines)
     
     averageExpr <- averageReplicates(dat, map)
-    averageExpr
+    return(averageExpr)
   }
   
   ccleExpr <- getExpr(mapId='syn1417166',dataId='syn425002')
-  entrez.ids <- gsub("(\\d*)_mt","\\1", rownames(ccleExpr))
-  genes <- unlist(mget(entrez.ids, org.Hs.egSYMBOL, ifnotfound=NA))
+  entrezIds <- gsub("(\\d*)_mt","\\1", rownames(ccleExpr))
+  genes <- unlist(mget(entrezIds, org.Hs.egSYMBOL, ifnotfound=NA))
   
-  tmp <- combine_probes_2_gene(ccleExpr, genes)
-  eset <- new("ExpressionSet",expr=tmp)
+  tmp <- combineProbesToGene(ccleExpr, genes)
+  eset <- new("ExpressionSet", expr=tmp)
   eset
 }
 
@@ -275,7 +275,7 @@ matchColumns <- function(dat, cellLines){
   ids2 <- match(toupper(dat$cellLineName), toupper(cellLines$Simplified.cell.name))
   ids3 <- match(toupper(dat$NAME), toupper(cellLines$Cell.line.name))
   ids4 <- match(toupper(dat$NAME), toupper(cellLines$Simplified.cell.name))
-  mat <- cbind(ids1,ids2,ids3,ids4)
+  mat <- cbind(ids1, ids2, ids3, ids4)
   newNames <- apply(mat, 1, function(x){ 
     if(sum(!is.na(x)) == 0){ 
       return("notAvailable")
@@ -284,38 +284,6 @@ matchColumns <- function(dat, cellLines){
     }
   })
  
-  newNames
+  return(newNames)
 }
 
-
-############################################################
-### utility functions to initially upload the data
-
-# synapseUpload <- function(){
-# 	data.dir <- "~/projects/az_ras/resources/colon/"
-# 	e <- new.env()
-# 	load(paste(data.dir,"kfsyscc/eset_kfsyscc_colon_processed.rda",sep=""),e)
-# 	upload.eset(SYN_KFSYSCC_ADJUSTED_ID, e$corrected_eset_genes)
-# 	
-# 	e <- new.env()
-# 	load(paste(data.dir,"khambata/eset_khambata_colon_processed.rda",sep=""),e)
-# 	upload.eset(SYN_KHAMBATA_CRC_ID, e$eset_genes)
-# 	
-# 	e <- new.env()
-# 	load(paste(data.dir,"tcga_crc_adjusted_eset_new.rda",sep=""),e)
-# 	upload.eset(SYN_TCGA_CRCEXPR_ADJUSTED_ID, e$tcga_crc_adjusted_eset)
-# 	
-# 	e <- new.env()
-# 	load("/gluster/work/DAT_088__TCGA_COAD_READ/Results/ColonCancerTCGA_DNAmethylation_237patients.RData", e)
-# 	upload.eset(SYN_TCGA_27KMETHYLATION, e$methSet)
-# 	
-# 	e <- new.env()
-# 	load("~/projects/az_ras/analysis/jguinney/tcga_crc/kras_braf_pik3ca_nras_hras.rda",e)
-# 	upload.eset(SYN_TCGA_RASMUT_ID, e$tcga_aa_mat)
-# }
-
-# upload.eset <- function(entity_id, eset){
-# 	layer <- getEntity(entity_id)
-# 	layer <- addObject(entity=layer, object=eset)
-# 	storeEntity(layer)
-# }
