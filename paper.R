@@ -404,7 +404,7 @@ compute_ras_signature_enrichment <- function(){
   makeRocPlot(3, sig="Meyerson")
   makeRocPlot(7, sig="Bild")
   makeRocPlot(8, sig="Baker")
-  plot(1:5, 1:, type="n", axes=F, xlab="", ylab="")
+  plot(1:5, 1:5, type="n", axes=F, xlab="", ylab="")
   legend("topleft",
          legend=c("TCGA CRC",
                   "Khambata-Ford", 
