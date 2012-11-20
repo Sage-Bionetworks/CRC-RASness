@@ -14,7 +14,8 @@ require(ROCR)
 require(IlluminaHumanMethylation27k.db)
 
 ## PULL IN THE PROJECT REPOSITORY IN ORDER TO SOURCE FUNCTIONS VIA GITHUB
-rasRepo <- getRepo("Sage-Bionetworks/CRC-RASness")
+## EVENTUALLY USE TAG TO POINT TO A SPECIFIC TIMEPOINT
+rasRepo <- getRepo("Sage-Bionetworks/CRC-RASness", ref="branch", refName="dev")
 sourceRepoFile(rasRepo, "functions/utilityFunctions.R")
 sourceRepoFile(rasRepo, "functions/dataFunctions.R")
 sourceRepoFile(rasRepo, "functions/modelFunctions.R")
