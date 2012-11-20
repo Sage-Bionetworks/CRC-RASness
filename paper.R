@@ -503,7 +503,7 @@ computeKfsysccValidation <- function(){
   return(list(tcga=tcgaPerf$auc, KF=khambataPerf$auc, gaedcke=gaedckePerf$auc))
 }
 
-compteTcgaRasactDifferencesForRasAminoacids <- function(){
+computeTcgaRasactDifferencesForRasAminoacids <- function(){
   kfsysccEset <- getKFSYSCC()
   tcgaEset <- getTCGACRC()
   maf <- getCleanTcgaMaf()
