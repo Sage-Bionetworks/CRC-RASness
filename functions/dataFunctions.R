@@ -5,15 +5,16 @@
 #####
 
 # global synapse variables
-SYN_KFSYSCC_ADJUSTED_ID <- "163118"
-SYN_TCGA_CRCEXPR_ADJUSTED_ID <- "140743"
-SYN_TCGA_RASMUT_ID <- "162410"
-SYN_TCGA_27KMETHYLATION <- "167612"
-SYN_CCLE_EXPR_ID <- "48344"
-SYN_CCLE_DRUGRESPONSE_ID <- "48359"
-SYN_CCLE_MUT_ID <- "48341"
-SYN_GAEDCKE_RECTAL_ID <- "140741"
-SYN_KHAMBATA_CRC_ID <- "140742"
+## UPDATE THESE TO POINT TO SYNAPSE COMMON REPOSITORY
+# SYN_KFSYSCC_ADJUSTED_ID <- "163118"
+# SYN_TCGA_CRCEXPR_ADJUSTED_ID <- "140743"
+# SYN_TCGA_RASMUT_ID <- "162410"
+# SYN_TCGA_27KMETHYLATION <- "167612"
+# SYN_CCLE_EXPR_ID <- "48344"
+# SYN_CCLE_DRUGRESPONSE_ID <- "48359"
+# SYN_CCLE_MUT_ID <- "48341"
+# SYN_GAEDCKE_RECTAL_ID <- "140741"
+# SYN_KHAMBATA_CRC_ID <- "140742"
 
 require(synapseClient)
 require(Biobase)
@@ -51,14 +52,6 @@ getOrFetch <- function(var, fetchExpr){
 #   
 #   return (maf)
 # }
-
-getTCGAEpiReg <- function(){
-	getOrFetch("TCGAEPIREG", loadEntity("SYN317477")$objects$epigRes)
-}
-
-getTCGAMeth <- function(){
-	getOrFetch("TCGAMETH",loadEntity(getEntity(SYN_TCGA_27KMETHYLATION))$objects$eset)
-}
 
 getTCGACRC <- function(){
 	getOrFetch("TCGACRC",loadEntity(getEntity(SYN_TCGA_CRCEXPR_ADJUSTED_ID))$objects$eset)

@@ -10,7 +10,7 @@ require(ROCR)
 
 findActiveMethylationSites <- function(methEset, geneEset, outlierPercent=.05, rhoThreshold=-.25){
 	
-	library(IlluminaHumanMethylation27k.db)
+	require(IlluminaHumanMethylation27k.db)
 	cpgSymbols <- as.list(IlluminaHumanMethylation27kSYMBOL)
 	
 	cpgSymbols <- cpgSymbols[!is.na(unlist(cpgSymbols))]
