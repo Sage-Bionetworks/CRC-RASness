@@ -4,18 +4,6 @@
 ## SUPPORTING ANALYST: BRIAN BOT
 #####
 
-# global synapse variables
-## UPDATE THESE TO POINT TO SYNAPSE COMMON REPOSITORY
-# SYN_KFSYSCC_ADJUSTED_ID <- "163118"
-# SYN_TCGA_CRCEXPR_ADJUSTED_ID <- "140743"
-# SYN_TCGA_RASMUT_ID <- "162410"
-# SYN_TCGA_27KMETHYLATION <- "167612"
-# SYN_CCLE_EXPR_ID <- "48344"
-# SYN_CCLE_DRUGRESPONSE_ID <- "48359"
-# SYN_CCLE_MUT_ID <- "48341"
-# SYN_GAEDCKE_RECTAL_ID <- "140741"
-# SYN_KHAMBATA_CRC_ID <- "140742"
-
 require(synapseClient)
 require(Biobase)
 require(affxparser)
@@ -23,6 +11,9 @@ require(org.Hs.eg.db)
 
 #synapseLogin()
 
+#####
+## FUNCTION WHICH LOOKS IN GLOBAL ENVIRONMENT TO SEE
+## IF VARIABLE ALREADY EXISTS BEFORE FETCHING IT
 getOrFetch <- function(var, fetchExpr){
 	tmp <- .GlobalEnv[[var]]
 	if(is.null(tmp)){
@@ -32,72 +23,97 @@ getOrFetch <- function(var, fetchExpr){
 	tmp
 }
 
-## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE
+## not fully functional until support for external locations is available
+#####
+## READ IN TCGA MAF FILES FOR COAD AND READ
 # getCleanTcgaMaf <- function(){
-#   coadIllumina <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_COAD.IlluminaGA_DNASeq.1.maf",
-#                               sep="\t",quote="",as.is=TRUE,header=TRUE,comment.char="",skip=1,fill=TRUE)
-#   readIllumina <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_READ.IlluminaGA_DNASeq.1.maf",
-#                               sep="\t",quote="",as.is=TRUE,header=TRUE,comment.char="",skip=1,fill=TRUE)
-#   allIllumina <- rbind(coad.illumina, read.illumina)
 #   
-#   coadSolid <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_COAD.SOLiD_DNASeq.1.maf",
-#                            sep="\t",quote="",as.is=TRUE,header=TRUE,comment.char="",skip=1,fill=TRUE)
-#   readSolid <- read.table("data~/tcga_coad_read/hgsc.bcm.edu_READ.SOLiD_DNASeq.1.maf",
-#                            sep="\t",quote="",as.is=TRUE,header=TRUE,comment.char="",skip=1,fill=TRUE)
-#   allSolid <- rbind(coad.solid, read.solid)
+#   ## GET TCGA COAD
+#   coadIllFolder <- synapseQuery("SELECT id, name FROM entity WHERE entity.parentId=='syn1460948'")
+#   coadIllFiles <- sapply(as.list(coadIllFolder$entity.id), function(synId){
+#     tmp <- downloadEntity(synId)
+#     return(file.path(tmp$cacheDir, tmp$files))
+#   })
 #   
-#   stopifnot(all(colnames(allIllumina) == colnames(allSolid)))
+#   coadSolidFolder <- synapseQuery("SELECT id, name FROM entity WHERE entity.parentId=='syn1460953'")
+#   coadSolidFiles <- sapply(as.list(coadSolidFolder$entity.id), function(synId){
+#     tmp <- downloadEntity(synId)
+#     return(file.path(tmp$cacheDir, tmp$files))
+#   })
 #   
-#   maf <- rbind(allIllumina, allSolid)
+#   ## GET TCGA READ
+#   readIllFolder <- synapseQuery("SELECT id, name FROM entity WHERE entity.parentId==''")
+#   readIllFiles <- sapply(as.list(readIllFolder$entity.id), function(synId){
+#     tmp <- downloadEntity(synId)
+#     return(file.path(tmp$cacheDir, tmp$files))
+#   })
 #   
-#   return (maf)
+#   readSolidFolder <- synapseQuery("SELECT id, name FROM entity WHERE entity.parentId==''")
+#   readSolidFiles <- sapply(as.list(readSolidFolder$entity.id), function(synId){
+#     tmp <- downloadEntity(synId)
+#     return(file.path(tmp$cacheDir, tmp$files))
+#   })
+#   
+#   ## PICK THE FILES OF INTEREST
+#   allFiles <- c(coadIllFiles, coadSolidFiles, readIllFiles, readSolidFiles)
+#   mafFiles <- grep(".maf", allFiles, fixed=T)
+#   
+#   allMafs <- lapply(as.list(mafFiles), function(maf){
+#     read.delim(maf, quote="", as.is=T, header=T, comment.char="", skip=1, fill=T)
+#   })
+#   masterMaf <- do.call(rbind, allMafs)
+#   
+#   return(masterMaf)
 # }
 
-getTCGACRC <- function(){
-	getOrFetch("TCGACRC",loadEntity(getEntity(SYN_TCGA_CRCEXPR_ADJUSTED_ID))$objects$eset)
-}
+## rename to getTCGAAgilent()
+# getTCGACRC <- function(){
+# 	getOrFetch("TCGACRC",loadEntity(getEntity(SYN_TCGA_CRCEXPR_ADJUSTED_ID))$objects$eset)
+# }
 
-getTCGARasMuts <- function(){
-	getOrFetch("TCGAMUTS",loadEntity(getEntity(SYN_TCGA_RASMUT_ID))$objects$eset)
-}
+# getTCGARasMuts <- function(){
+# 	getOrFetch("TCGAMUTS",loadEntity(getEntity(SYN_TCGA_RASMUT_ID))$objects$eset)
+# }
+
 
 ## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE
 # getRASSigs <- function(){
 # 	loadGmtData("resources/ras_signatures.gmt")
 # }
 
-getGaedcke <- function(){
-	getOrFetch("GAEDCKE",loadEntity(getEntity(SYN_GAEDCKE_RECTAL_ID))$objects$adjusted_eset)
-}
 
-getKhambata <- function(){
-	getOrFetch("KHAMBATA",loadEntity(getEntity(SYN_KHAMBATA_CRC_ID))$objects$eset)
-}
+# getGaedcke <- function(){
+# 	getOrFetch("GAEDCKE",loadEntity(getEntity(SYN_GAEDCKE_RECTAL_ID))$objects$adjusted_eset)
+# }
 
-getKFSYSCC <- function(){
-	getOrFetch("KFSYSCC", loadEntity(getEntity(SYN_KFSYSCC_ADJUSTED_ID))$objects$eset)
-}
+# getKhambata <- function(){
+# 	getOrFetch("KHAMBATA",loadEntity(getEntity(SYN_KHAMBATA_CRC_ID))$objects$eset)
+# }
+
+# getKFSYSCC <- function(){
+# 	getOrFetch("KFSYSCC", loadEntity(getEntity(SYN_KFSYSCC_ADJUSTED_ID))$objects$eset)
+# }
 
 getCCLE <- function(){
 	getOrFetch("CCLE", makeCcleEset())
 }
 
 
-## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - study found -- no expression data
+## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - syn1490292 - 3 zip files
 # getEMEXP3549 <- function(){
 #   env <- new.env()
 #   load("data~/MEXP3549/MEXP3549_eset.rda", env)
 #   return(env$eset)
 # }
 
-## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - syn372544
+## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - syn1490290
 # getEMEXP3557 <- function(){
 #   env <- new.env()
 #   load("data~/MEXP3557/MEXP3557_eset.rda", env)
 #   return(env$eset)
 # }
 
-## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - syn202357
+## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE - syn1503591
 # getEMEXP991 <- function(){
 #   annot <- read.table("data~/MEXP991/MEXP991.annotation.txt",sep="\t",as.is=TRUE,header=TRUE)
 #   env <- new.env()
