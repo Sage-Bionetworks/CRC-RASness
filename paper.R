@@ -236,7 +236,7 @@ testRasnessInLuad <- function(){
 
 computeRnaseqRasness <- function(){
   kfsysccEset <- getKFSYSCC()
-  tcgaEset <- getTCGACRC()
+  tcgaEset <- getTCGACRCAgilent()
   tcgaAaMat <- getTCGARasMuts()
   canonical <- c(canonicalKras, canonicalBraf, canonicalNras)
   
@@ -332,7 +332,7 @@ compute_ras_signature_enrichment <- function(){
   kfsysccEset <- getKFSYSCC()
   khambataEset <- getKhambata()
   gaedckeEset <- getGaedcke()
-  tcgaEset <- getTCGACRC()
+  tcgaEset <- getTCGACRCAgilent()
   tcgaEset <- tcgaEset[,!is.na(tcgaEset$kras)]
   
   kfsysccEsRas <- gsva(kfsysccEset, rasGsets,min.sz=10,max.sz=500)$es
@@ -459,7 +459,7 @@ computeKfsysccValidation <- function(){
   kfsysccEset <- getKFSYSCC()
   khambataEset <- getKhambata()
   gaedckeEset <- getGaedcke()
-  tcgaEset <- getTCGACRC()
+  tcgaEset <- getTCGACRCAgilent()
   tcgaEset <- tcgaEset[,!is.na(tcgaEset$kras)]
   
   yhats <- binomialPredictEN(kfsysccEset, factor(kfsysccEset$kras_status=="MUT"), 
@@ -506,7 +506,7 @@ computeKfsysccValidation <- function(){
 
 computeTcgaRasactDifferencesForRasAminoacids <- function(){
   kfsysccEset <- getKFSYSCC()
-  tcgaEset <- getTCGACRC()
+  tcgaEset <- getTCGACRCAgilent()
   maf <- getCleanTcgaMaf()
   rasScore <- binomialPredictEN(kfsysccEset, factor(kfsysccEset$kras_status=="MUT"), 
                                   list(tcgaEset))$yhats[[1]]

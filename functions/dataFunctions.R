@@ -66,8 +66,8 @@ getOrFetch <- function(var, fetchExpr){
 #   return(masterMaf)
 # }
 
-## rename to getTCGAAgilent()
-# getTCGACRC <- function(){
+
+# getTCGACRCAgilent <- function(){
 # 	getOrFetch("TCGACRC",loadEntity(getEntity(SYN_TCGA_CRCEXPR_ADJUSTED_ID))$objects$eset)
 # }
 
@@ -76,7 +76,7 @@ getOrFetch <- function(var, fetchExpr){
 # }
 
 
-## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE
+## brian-bot TO DO: CHANGE TO PULL FROM SYNAPSE -- MODEL MUST RUN FIRST AND THEN SAVED OUT
 # getRASSigs <- function(){
 # 	loadGmtData("resources/ras_signatures.gmt")
 # }
