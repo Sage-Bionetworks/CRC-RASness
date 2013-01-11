@@ -132,10 +132,25 @@ getGaedckeFromGEO <- function(){
   gaedckeEset <- geoFiles$GSE20842_series_matrix.txt.gz
   # NOTE: KRAS STATUS - pData(gaedckeEset)$characteristics_ch1.5 IN pData
   
-#   clin <- pData(gaedckeEset)
-#   feat <- fData(gaedckeEset)
-#   theseFeat <- rownames(feat)[feat$"Gene symbol" != ""]
-#   expr <- exprs(gaedckeEset)
+  ## SUBSET TO ONLY TUMORS
+  clin <- pData(gaedckeEset)
+  gaedckeEset <- gaedckeEset[, clin$characteristics_ch1.4 == "tissue: tumor" ]
+  
+  return(gaedckeEset)
+}
+
+
+#####
+## KHAMBATA-FORD DATASET FROM GEO
+## 
+#####
+getKhambataFromGEO <- function(){
+  require(GEOquery)
+  
+  geoFiles <- getGEO("GSE5851", GSEMatrix=T, AnnotGPL=T)
+  khambataEset <- geoFiles$GSE5851_series_matrix.txt.gz
+  
+  return(khambataEset)
 }
 
 
