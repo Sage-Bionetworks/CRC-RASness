@@ -1,7 +1,7 @@
 ## NEED TO CONSOLIDATE DOWN TO ONE SINGLE GENE MEASUREMENT
 
 
-## SCRIPT TO QC AND PROCESS THE GAEDCKE DATASET
+## SCRIPT TO QC AND PROCESS THE KHAMBATA-FORD DATASET
 #####
 ## ANALYST: BRIAN M. BOT
 #####
@@ -16,7 +16,7 @@ sourceRepoFile(repository="Sage-Bionetworks/CRC-RASness",
                ref="branch", refName="dev")
 
 ## PULL IN THE DATA AND SUBSET TO COHORT OF INTEREST (TUMOR SAMPLES)
-exprSet <- getGaedckeFromGEO()
+exprSet <- getKhambataFromGEO()
 expr <- exprs(exprSet)
 clin <- pData(exprSet)
 
@@ -36,4 +36,11 @@ xyplot(s$d ~ 1:length(s$d),
 xyplot(s$v[,2] ~ s$v[,1],
        xlab="1st svd",
        ylab="2nd svd")
+
+
+
+## ONE MAJOR OUTLIER
+# > colnames(expr)[ which(s$v[,2] < -.7) ]
+# [1] "GSM136626"
+# Tissue: Adrenal gland; Kidney
 
