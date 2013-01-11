@@ -1,6 +1,6 @@
 ## FUNCTIONS TO EXTRACT RAW DATA OBJECTS FROM SYNAPSE
 #####
-## BRIAN M. BOT
+## ANALYST: BRIAN M. BOT
 #####
 
 
@@ -53,7 +53,7 @@ getTCGAcrcAgilent <- function(){
     stop("rownames do not match")
   }
   
-  thesePatients <- sapply(strsplit(colnames(crcAgilent), ".", fixed=T), function(x){
+  thesePatients <- sapply(strsplit(colnames(crcAgilent), "-", fixed=T), function(x){
     paste(x[1:3], collapse="-")
   })
   
@@ -78,7 +78,7 @@ getTCGAcrcRNAseq <- function(){
     stop("rownames do not match")
   }
   
-  thesePatients <- sapply(strsplit(colnames(crcRNAseq), ".", fixed=T), function(x){
+  thesePatients <- sapply(strsplit(colnames(crcRNAseq), "-", fixed=T), function(x){
     paste(x[1:3], collapse="-")
   })
   
