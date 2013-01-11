@@ -48,6 +48,7 @@ getTCGAcrcAgilent <- function(){
   readAgilent <- loadTCGAFileFromEntity("syn418082")
   
   if( all(rownames(coadAgilent) == rownames(readAgilent)) ){
+    theseFeatures <- rownames(coadAgilent)
     crcAgilent <- cbind(coadAgilent, readAgilent)
   } else{
     stop("rownames do not match")
@@ -63,6 +64,10 @@ getTCGAcrcAgilent <- function(){
     stop("duplicated patients")
   }
   
+  ## CONVERT TO NUMERIC MATRIX
+  crcAgilent <- apply(crcAgilent, 2, as.numeric)
+  rownames(crcAgilent) <- theseFeatures
+  
   return(crcAgilent)
 }
 
@@ -73,6 +78,7 @@ getTCGAcrcRNAseq <- function(){
   readRNAseq <- loadTCGAFileFromEntity("syn418090")
   
   if( all(rownames(coadRNAseq) == rownames(readRNAseq)) ){
+    theseFeatures <- rownames(coadRNAseq)
     crcRNAseq <- cbind(coadRNAseq, readRNAseq)
   } else{
     stop("rownames do not match")
@@ -87,6 +93,10 @@ getTCGAcrcRNAseq <- function(){
   } else{
     stop("duplicated patients")
   }
+  
+  ## CONVERT TO NUMERIC MATRIX
+  crcRNAseq <- apply(crcRNAseq, 2, as.numeric)
+  rownames(crcRNAseq) <- theseFeatures
   
   return(crcRNAseq)
 }
