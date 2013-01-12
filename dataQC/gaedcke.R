@@ -14,6 +14,7 @@ require(lattice)
 myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
                   ref="branch", refName="dev")
 sourceRepoFile(myRepo, "functions/getDataFunctions.R")
+sourceRepoFile(myRepo, "functions/utilityFunctions.R")
 
 ## PULL IN THE DATA AND SUBSET TO COHORT OF INTEREST (TUMOR SAMPLES)
 exprSet <- getGaedckeFromGEO()
