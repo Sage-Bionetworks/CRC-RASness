@@ -11,9 +11,9 @@ require(corpcor)
 require(lattice)
 
 ## SOURCE IN THE DATA EXTRACTION FUNCTIONS
-sourceRepoFile(repository="Sage-Bionetworks/CRC-RASness",
-               repositoryPath="functions/getDataFunctions.R",
-               ref="branch", refName="dev")
+myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
+                  ref="branch", refName="dev")
+sourceRepoFile(myRepo, "functions/getDataFunctions.R")
 
 ## PULL IN THE DATA AND SUBSET TO COHORT OF INTEREST (TUMOR SAMPLES)
 exprSet <- getGaedckeFromGEO()

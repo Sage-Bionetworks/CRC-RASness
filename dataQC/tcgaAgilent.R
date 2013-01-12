@@ -1,4 +1,4 @@
-## FUNCTIONS TO EXTRACT RAW DATA OBJECTS FROM SYNAPSE
+## FUNCTIONS TO EXTRACT DATA OBJECTS FROM SYNAPSE AND QC
 #####
 ## ANALYST: BRIAN M. BOT
 #####
@@ -8,9 +8,9 @@ require(corpcor)
 require(lattice)
 
 ## SOURCE IN THE DATA EXTRACTION FUNCTIONS
-sourceRepoFile(repository="Sage-Bionetworks/CRC-RASness",
-               repositoryPath="functions/getDataFunctions.R",
-               ref="branch", refName="dev")
+myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
+                  ref="branch", refName="dev")
+sourceRepoFile(myRepo, "functions/getDataFunctions.R")
 
 ## PULL IN THE AGILENT TCGA DATA AND SUBSET TO COHORT OF INTEREST
 expr <- getTCGAcrcAgilent()
@@ -37,7 +37,7 @@ xyplot(s$d ~ 1:length(s$d),
        xaxt="n",
        xlab="eigen gene",
        ylab="% variance explained")
-xyplot(s$v[,2] ~ s$v[,1], groups=factor(grepl("Colon", clin$histological_type)),
+xyplot(s$v[,2] ~ s$v[,1], groups=factor(grepl("COLON", clin$tumor_tissue_site)),
        xlab="1st svd",
        ylab="2nd svd")
 

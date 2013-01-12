@@ -1,7 +1,7 @@
-## NEED TO CONSOLIDATE DOWN TO ONE SINGLE GENE MEASUREMENT
+## SVD PLOTS LOOK WORRISOME -- WILL NEED TO CONSIDER REMOVAL OF LATENT STRUCTURE
 
 
-## SCRIPT TO QC AND PROCESS THE KHAMBATA-FORD DATASET
+## FUNCTIONS TO EXTRACT DATA OBJECTS FROM SYNAPSE AND QC
 #####
 ## ANALYST: BRIAN M. BOT
 #####
@@ -15,10 +15,14 @@ myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
                   ref="branch", refName="dev")
 sourceRepoFile(myRepo, "functions/getDataFunctions.R")
 
-## PULL IN THE DATA AND SUBSET TO COHORT OF INTEREST (TUMOR SAMPLES)
-exprSet <- getKhambataFromGEO()
-expr <- exprs(exprSet)
-clin <- pData(exprSet)
+## PULL IN THE AGILENT TCGA DATA AND SUBSET TO COHORT OF INTEREST
+expr <- getTCGAcrcRNAseq()
+clin <- getTCGAcrcClinical()
+clin <- clin[colnames(expr), ]
+
+## REMOVE GENES WHERE THERE ARE NO COUNTS AVAILABLE FOR ANY PATIENTS
+expr <- expr[ rowSums(expr) != 0, ]
+
 
 ## CONVENIENCE FUNCTION FOR SVD EVALUATIONS
 fs <- function(x){
@@ -33,14 +37,8 @@ xyplot(s$d ~ 1:length(s$d),
        xaxt="n",
        xlab="eigen gene",
        ylab="% variance explained")
-xyplot(s$v[,2] ~ s$v[,1],
+xyplot(s$v[,2] ~ s$v[,1], groups=factor(grepl("RECTUM", clin$tumor_tissue_site)),
        xlab="1st svd",
        ylab="2nd svd")
 
-
-
-## ONE MAJOR OUTLIER
-# > colnames(expr)[ which(s$v[,2] < -.7) ]
-# [1] "GSM136626"
-# Tissue: Adrenal gland; Kidney
-
+# factor(grepl("RECTUM", clin$tumor_tissue_site))
