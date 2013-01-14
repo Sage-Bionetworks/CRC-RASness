@@ -19,10 +19,12 @@ getKFSYSCCdata <- function(){
   untar(file.path(kfEnt$cacheDir, kfEnt$files), exdir = kfDir)
   theseFiles <- list.celfiles(kfDir, recursive=T, full.names=T)
   
-  ## READ IN USING affy
+  ## READ IN CEL FILES
   kooExpr <- ReadAffy(filenames=theseFiles)
+  koo <- rma(kooExpr, background=F)
   
-  
+  kooMat <- exprs(koo)
+  return(kooMat)
 }
 
 
