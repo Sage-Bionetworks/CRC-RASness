@@ -23,8 +23,7 @@ getKFSYSCCdata <- function(){
   kooExpr <- ReadAffy(filenames=theseFiles)
   koo <- rma(kooExpr, background=F)
   
-  kooMat <- exprs(koo)
-  return(kooMat)
+  return(koo)
 }
 
 
