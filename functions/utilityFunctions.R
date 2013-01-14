@@ -167,7 +167,7 @@ combineProbesToGene <- function(expr, genes, method="svd"){
 	
 	for(gene in ugenes){
 		subExpr <- as.matrix(expr[which(genes == gene),])
-		if(dim(sub.expr)[2] == 1){
+		if(dim(subExpr)[2] == 1){
 			M[gene, ] <- subExpr
 		}else{
 			tmp <- svd(subExpr - rowMeans(subExpr))$v[,1]
