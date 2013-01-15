@@ -21,9 +21,16 @@ getKFSYSCCdata <- function(){
   
   ## READ IN CEL FILES
   kooExpr <- ReadAffy(filenames=theseFiles)
-  koo <- rma(kooExpr, background=F)
   
-  return(koo)
+  ## READ IN THE CLINICAL DATA
+  clinEnt <- downloadEntity("syn1588162")
+  kooClin <- read.csv(file.path(clinEnt$cacheDir, clinEnt$files), as.is=T)
+  rownames(kooClin) <- kooClin$SN
+  
+  stopifnot(all(sapply(strsplit(sampleNames(kooExpr), ".", fixed=T), "[[", 1) == kooClin$SN))
+  pData(kooExpr) <- kooClin
+  
+  return(kooExpr)
 }
 
 
