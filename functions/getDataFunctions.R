@@ -25,9 +25,9 @@ getKFSYSCCdata <- function(){
   ## READ IN THE CLINICAL DATA
   clinEnt <- downloadEntity("syn1588162")
   kooClin <- read.csv(file.path(clinEnt$cacheDir, clinEnt$files), as.is=T)
-  rownames(kooClin) <- kooClin$SN
   
   stopifnot(all(sapply(strsplit(sampleNames(kooExpr), ".", fixed=T), "[[", 1) == kooClin$SN))
+  rownames(kooClin) <- sampleNames(kooExpr)
   pData(kooExpr) <- kooClin
   
   return(kooExpr)
