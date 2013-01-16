@@ -123,7 +123,7 @@ kooFndnQC <- function(){
           "using the `affyPLM` package. The following plot shows the Relative Log ",
           "Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots ",
           "for all 322 samples.\n\n",
-          "${image$fileName=QA_CRC322.png}\n\n",
+          "${image?fileName=QA_CRC322.png}\n\n",
           "Given the high NUSE for samples collected before 01/01/2007, those 15 ",
           "samples were removed from all further analyses. We then ran `rma` on ",
           "the resulting 307 samples which consolidates the feature space down to 54,675 ",
