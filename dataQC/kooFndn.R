@@ -11,6 +11,10 @@ require(corpcor)
 require(lattice)
 require(hgu133plus2.db)
 
+## CREATE A DIRECTORY FOR PLOTS TO BE UPLOADED TO SYNAPSE
+kooDir <- file.path(tempdir(), "kooQC")
+dir.create(kooDir)
+
 ## SOURCE IN THE DATA EXTRACTION FUNCTIONS
 myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
                   ref="branch", refName="dev")
@@ -29,10 +33,7 @@ kooRaw <- kooRaw[, order(scanDate)]
 ## PERFORM SOME PRELIMINARY QC
 pset <- fitPLM(kooRaw)
 
-kooDir <- file.path(tempdir(), "kooQC")
-dir.create(kooDir)
-
-png(file.path(kooDir, "QA_CRC322.png"))
+png(file.path(kooDir, "QA_CRC322.png"), width=600, height=600)
 par(mfrow=c(2,1))
 RLE(pset, main="RLE for CRC322")
 NUSE(pset, main="NUSE for CRC322")
@@ -64,11 +65,8 @@ xyplot(s$v[,2] ~ s$v[,1],
        xlab="1st svd",
        ylab="2nd svd")
 dev.off()
-xyplot(s$v[,2] ~ s$v[,1], groups=factor(pData(exprSet)$Grade),
-       xlab="1st svd",
-       ylab="2nd svd")
 
-fit <- lmFit(exprSet, model.matrix(~pData(exprSet)$AGE))
+fit <- lmFit(exprSet, model.matrix(~as.numeric(pData(exprSet)$AGE)))
 bfit <- eBayes(fit)
 png(file.path(kooDir, "ageEffectHist.png"))
 hist(bfit$p.value[,2], main="Limma: Effect of age on gene expression", xlab="p-value")
@@ -106,15 +104,11 @@ pData(exprSetCorrected)$kras_status <- kras_status
 
 kfsysccQcedExpressionSet <- exprSetCorrected
 
+
+
+## UPLOAD INFORMATION TO SYNAPSE
 kooEnt <- Data(name="kfsysccQcedExpressionSet.rda", parentId="syn1528361")
 kooEnt <- createEntity(kooEnt)
-kooEnt <- addObject(kooEnt, kfsysccQcedExpressionSet)
-attachThese <- list.files(kooDir, full.names=T)
-attachThese <- attachThese[ grep(".png", attachThese, fixed=T) ]
-for(i in attachThese){
-  kooEnt <- synapseClient:::addAttachment(kooEnt, i)
-}
-
 kooEnt$properties$description <- 
   paste("KFSYSCC generously provided 322 CRC samples with expression profiling on ",
         "the Affymetrix U133 Plus 2 platform. These samples were QCed initially ",
@@ -147,9 +141,15 @@ kooEnt$properties$description <-
         "analysis. This final R object is an `ExpressionSet` containing gene-level ",
         "expression values as well as clinical information on the samples within ",
         "the `phenoData` slot of the object.", sep="")
-kooEnt <- storeEntity(kooEnt)
-kooEnt <- synapseClient:::storeAttachment(kooEnt)
-act <- Activity(list(name="QC of KFSYSCC expression data", used=list(list(entity="syn1528362", wasExecuted=F))))
+kooEnt <- addObject(kooEnt, kfsysccQcedExpressionSet)
+act <- Activity(list(name="KFSYSCC expression QC", used=list(list(entity="syn1528362", wasExecuted=F))))
 act <- createEntity(act)
 generatedBy(kooEnt) <- act
 kooEnt <- storeEntity(kooEnt)
+
+attachThese <- list.files(kooDir, full.names=T)
+attachThese <- attachThese[ grep(".png", attachThese, fixed=T) ]
+for(i in attachThese){
+  kooEnt <- synapseClient:::addAttachment(kooEnt, i)
+}
+kooEnt <- synapseClient:::storeAttachment(kooEnt)
