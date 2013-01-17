@@ -105,7 +105,7 @@ gaedckeEnt$properties$description <-
         "which were designated as tumor tissue and removed probes for which there was ",
         "no gene symbol associated. Singular Value Decomposition was performed on the ",
         "resulting expression matrix to assess its structure, as seen below.\n\n",
-        "${image?fileName=gaedcke_probesetRma_pctVar.png}  ${image?fileName=gaedcke_probesetRma_svd1v2.png}\n\n",
+        "${image?fileName=gaedcke\_probesetRma\_pctVar.png}  ${image?fileName=gaedcke\_probesetRma\_svd1v2.png}\n\n",
         "The first two singular values were not strongly associated with any clinical ",
         "covariates and there appears to be no single outlier nor distinct group of outliers.\n\n",
         "The effects of age and gender were subsequently removed from the data by removing ",
@@ -113,7 +113,7 @@ gaedckeEnt$properties$description <-
         "The first SVD was then used to collapse multiple probe to a single expression ",
         "value per gene where necessary. SVD plots were repeated to ensure no artifacts ",
         "were introduced in this process.\n\n",
-        "${image?fileName=gaedcke_probesetRmaGeneSvdAdjusted_pctVar.png}  ${image?fileName=gaedcke_probesetRmaGeneSvdAdjusted_svd1v2.png}\n\n",
+        "${image?fileName=gaedcke\_probesetRmaGeneSvdAdjusted\_pctVar.png}  ${image?fileName=gaedcke\_probesetRmaGeneSvdAdjusted\_svd1v2.png}\n\n",
         "This final R object is an `ExpressionSet` containing gene-level expression values ",
         "as well as clinical information on the samples within the `phenoData` slot of ",
         "the object.\n", sep="")
