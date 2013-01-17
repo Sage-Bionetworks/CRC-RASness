@@ -107,6 +107,7 @@ kfsysccQcedExpressionSet <- exprSetCorrected
 
 
 ## UPLOAD INFORMATION TO SYNAPSE
+require(synapseClient)
 kooEnt <- Data(name="kfsysccQcedExpressionSet.rda", parentId="syn1528361")
 kooEnt <- createEntity(kooEnt)
 kooEnt$properties$description <- 
