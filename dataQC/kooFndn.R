@@ -110,43 +110,12 @@ kfsysccQcedExpressionSet <- exprSetCorrected
 require(synapseClient)
 kooEnt <- Data(name="kfsysccQcedExpressionSet.rda", parentId="syn1528361")
 kooEnt <- createEntity(kooEnt)
-kooEnt$properties$description <- 
-  paste("KFSYSCC generously provided 322 CRC samples with expression profiling on ",
-        "the Affymetrix U133 Plus 2 platform. These samples were QCed initially ",
-        "using the `affyPLM` package. The following plot shows the Relative Log ",
-        "Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots ",
-        "for all 322 samples.\n\n",
-        "${image?fileName=QA\_CRC322.png}\n\n",
-        "Given the high NUSE for samples collected before 01/01/2007, those 15 ",
-        "samples were removed from all further analyses. We then ran `rma` on ",
-        "the resulting 307 samples which consolidates the feature space down to 54,675 ",
-        "probesets. Singular Value Decomposition (SVD) was performed on the resulting ",
-        "expression matrix to assess its structure.\n\n",
-        "${image?fileName=koo\_probesetRma\_pctVar.png} ",
-        "${image?fileName=koo\_probesetRma\_svd1v2.png}\n\n",
-        "While the first SVD appears to explain about 20% of the variation, however it was ",
-        "not strongly associated with any clinical covariates and there appears to be no ",
-        "single outlier nor distinct group of outliers that was the cause.\n\n",
-        "The effect of age of the patient was explored further for association with ",
-        "`rma` summarized expression levels. The `eBayes`-corrected p-value histogram ",
-        "of the age effect is presented below.\n\n",
-        "${image?fileName=ageEffectHist.png}\n\n",
-        "The gene-specific fitted values of age were removed from the expression matrix ",
-        "and the first SVD was used to collapse multiple probesets to a single ",
-        "expression value per gene. SVD plots were repeated to ensure no artifacts ",
-        "were introduced in this process.\n\n",
-        "${image?fileName=koo\_probesetRmaGeneSvd\_pctVar.png}  ",
-        "${image?fileName=koo\_probesetRmaGeneSvd\_svd1v2.png}\n\n",
-        "Once this final processing was complete, all patients who did not have KRAS ",
-        "status evaluated were removed from the dataset and will not be used for further ",
-        "analysis. This final R object is an `ExpressionSet` containing gene-level ",
-        "expression values as well as clinical information on the samples within ",
-        "the `phenoData` slot of the object.", sep="")
 kooEnt <- addObject(kooEnt, kfsysccQcedExpressionSet)
 act <- Activity(list(name="KFSYSCC expression QC", used=list(list(entity="syn1528362", wasExecuted=F))))
 act <- createEntity(act)
 generatedBy(kooEnt) <- act
 kooEnt <- storeEntity(kooEnt)
+## ADD DESCRIPTION ON WEB
 
 attachThese <- list.files(kooDir, full.names=T)
 attachThese <- attachThese[ grep(".png", attachThese, fixed=T) ]
