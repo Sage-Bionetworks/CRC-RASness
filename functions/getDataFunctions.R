@@ -82,8 +82,8 @@ getTCGAcrcAgilent <- function(){
 #####
 ## RNAseq
 getTCGAcrcRNAseq <- function(){
-  coadRNAseq <- loadTCGAFileFromEntity("syn417839")
-  readRNAseq <- loadTCGAFileFromEntity("syn418090")
+  coadRNAseq <- loadTCGAFileFromEntity("syn1446197")
+  readRNAseq <- loadTCGAFileFromEntity("syn1446276")
   
   if( all(rownames(coadRNAseq) == rownames(readRNAseq)) ){
     theseFeatures <- rownames(coadRNAseq)
