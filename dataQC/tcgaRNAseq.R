@@ -33,6 +33,7 @@ expr <- expr[ rowSums(expr) != 0, ]
 rns <- sapply(strsplit(rownames(expr), "|", fixed=T), "[[", 1)
 idx <- rns != "?"
 expr <- expr[idx, ]
+expr <- log2(expr+1)
 
 ## ONE DUPLICATED GENE - COLLAPSE BY USING SVD
 expr <- combineProbesToGene(expr, rns[idx])
@@ -46,15 +47,21 @@ fs <- function(x){
 
 ## SVD ON EXPRESSION MATRIX -- ASSESS OVERALL STRUCTURE AND POSSIBLE LATENT STRUCTURE
 s <- fs(expr)
+png(filename=file.path(tcgaRNAseqDir, "tcgaRNAseq_pctVar.png"))
 xyplot(s$d ~ 1:length(s$d),
        xaxt="n",
        xlab="eigen gene",
        ylab="% variance explained")
+dev.off()
+png(filename=file.path(tcgaRNAseqDir, "tcgaRNAseq_svd1v2.png"))
 xyplot(s$v[,2] ~ s$v[,1], groups=factor(grepl("RECTUM", clin$tumor_tissue_site)),
        xlab="1st svd",
        ylab="2nd svd")
+dev.off()
 
-# factor(grepl("RECTUM", clin$tumor_tissue_site))
+## REMOVE AGE AND GENDER EFFECTS
+clin$age_at_initial_pathologic_diagnosis
+clin$gender
 
 tcgaRNAseqQcedExpressionSet <- ExpressionSet(expr)
 pData(tcgaRNAseqQcedExpressionSet) <- clin
@@ -65,8 +72,8 @@ tcgaRNAseqEnt <- Data(name="tcgaRNAseqQcedExpressionSet.rda", parentId="syn15850
 tcgaRNAseqEnt <- createEntity(tcgaRNAseqEnt)
 tcgaRNAseqEnt <- addObject(tcgaRNAseqEnt, tcgaRNAseqQcedExpressionSet)
 act <- Activity(list(name="tcgaRNAseq expression QC",
-                     used=list(list(entity="syn417828", wasExecuted=F),
-                               list(entity="syn418082", wasExecuted=F),
+                     used=list(list(entity="syn1446197", wasExecuted=F),
+                               list(entity="syn1446276", wasExecuted=F),
                                list(entity="syn1446080", wasExecuted=F),
                                list(entity="syn1446153", wasExecuted=F))))
 act <- createEntity(act)
