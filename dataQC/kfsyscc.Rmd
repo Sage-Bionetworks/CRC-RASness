@@ -1,0 +1,129 @@
+KFSYSCC generously provided 322 CRC samples with expression profiling on the Affymetrix U133 Plus 2 platform. These samples were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all 322 samples.
+
+```{r loadData, include=FALSE}
+## SCRIPT TO QC AND PROCESS THE KOO FOUNDATION DATASET
+#####
+## ANALYST: BRIAN M. BOT
+#####
+
+require(synapseClient)
+require(rGithubClient)
+require(affy)
+require(affyPLM)
+require(limma)
+require(chron)
+require(corpcor)
+require(lattice)
+require(hgu133plus2.db)
+
+## CREATE A DIRECTORY FOR PLOTS TO BE UPLOADED TO SYNAPSE
+kooDir <- file.path(tempdir(), "kooQC")
+dir.create(kooDir)
+
+## SOURCE IN UTILITY FUNCTIONS
+myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
+                  ref="branch", refName="dev")
+sourceRepoFile(myRepo, "functions/utilityFunctions.R")
+
+## GRAB THE ARCHIVE FILE FROM KOO - UNTAR IN TEMP DIRECTORY
+kfEnt <- downloadEntity("syn1528362")
+kfDir <- tempfile(pattern="kfDir")
+dir.create(kfDir)
+untar(file.path(kfEnt$cacheDir, kfEnt$files), exdir = kfDir)
+theseFiles <- list.celfiles(kfDir, recursive=T, full.names=T)
+
+## READ IN CEL FILES
+kooExpr <- ReadAffy(filenames=theseFiles)
+
+## READ IN THE CLINICAL DATA
+clinEnt <- downloadEntity("syn1588162")
+kooClin <- read.csv(file.path(clinEnt$cacheDir, clinEnt$files), as.is=T)
+
+stopifnot(all(sapply(strsplit(sampleNames(kooExpr), ".", fixed=T), "[[", 1) == kooClin$SN))
+rownames(kooClin) <- sampleNames(kooExpr)
+pData(kooExpr) <- kooClin
+kooRaw <- kooExpr
+
+scanDate <- protocolData(kooRaw)$ScanDate
+scanDate <- chron(gsub(" .*", "", scanDate))
+
+## ORDER SAMPLES IN CHRONOLOGICAL ORDER OF SCAN DATE
+kooRaw <- kooRaw[, order(scanDate)]
+
+## PERFORM SOME PRELIMINARY QC
+pset <- fitPLM(kooRaw)
+```
+
+```{r plmPlots, echo=FALSE}
+par(mfrow=c(2,1))
+RLE(pset, main="RLE for CRC322")
+NUSE(pset, main="NUSE for CRC322")
+rm(pset)
+```
+
+Given the high NUSE for samples collected before 01/01/2007, those 15 samples were removed from all further analyses. We then ran `rma` on the resulting 307 samples which consolidates the feature space down to 54,675 probesets. Singular Value Decomposition (SVD) was performed on the resulting expression matrix to assess its structure.
+
+```{r subset, include=FALSE}
+# REMOVE EARLY SAMPLES; LARGE SE FROM NUSE PLOT
+kooRaw <- kooRaw[ , scanDate > "01/01/07" ]
+exprSet <- rma(kooRaw)
+expr <- exprs(exprSet)
+
+## SVD ON EXPRESSION MATRIX -- ASSESS OVERALL STRUCTURE AND POSSIBLE LATENT STRUCTURE
+s <- fs(expr)
+```
+
+```{r rawSvd, echo=FALSE}
+xyplot(s$d ~ 1:length(s$d),
+       xaxt="n",
+       xlab="singular value",
+       ylab="% variation explained")
+xyplot(s$v[,2] ~ s$v[,1],
+       xlab="1st svd",
+       ylab="2nd svd")
+```
+
+The first SVD appears to explain about 20% of the variation and did not appear strongly associated with any clinical covariates.
+
+```{r normalize, include=FALSE}
+fit <- lmFit(exprSet, model.matrix(~as.numeric(pData(exprSet)$AGE)))
+bfit <- eBayes(fit)
+#hist(bfit$p.value[,2], main="Limma: Effect of age on gene expression", xlab="p-value")
+exprSetCorrected <- exprSet
+exprs(exprSetCorrected) <- exprs(exprSet) - fitted.values(fit)
+
+## COMBINE TO ONE PROBE PER GENE
+mapDat <- unlist(as.list(hgu133plus2SYMBOL))[ rownames(expr) ]
+exprGene <- combineProbesToGene(exprs(exprSetCorrected), mapDat)
+exprs(exprSetCorrected) <- exprGene
+
+## MAKE SURE NO LARGE AMOUNTS OF VARIATION HAVE BEEN ADDED BY PROCESS
+sGene <- fs(exprGene)
+```
+
+The gene-specific fitted values of age were removed from the expression matrix and the first SVD was used to collapse multiple probesets to a single expression value per gene. SVD plots were repeated on this further normalized and summarized data to ensure no artifacts were introduced in this process.
+
+```{r normSvd, echo=FALSE}
+xyplot(sGene$d ~ 1:length(sGene$d),
+       xaxt="n",
+       xlab="eigen gene",
+       ylab="% variance explained")
+xyplot(sGene$v[,2] ~ sGene$v[,1],
+       xlab="1st svd",
+       ylab="2nd svd")
+```
+
+```{r saveObject, include=FALSE}
+## FINALIZE THE SAMPLES THAT WILL BE KEPT FOR FURTHER ANALYSIS
+## REMOVE UNANNOTATED KRAS
+exprSetCorrected <- exprSetCorrected[ , pData(exprSetCorrected)$KRAS_Mutation != "NaN"]
+kras_status <- pData(exprSetCorrected)$KRAS_Mutation
+kras_status[kras_status=="None"] <- "WT"
+kras_status[kras_status=="Yes"] <- "MUT"
+pData(exprSetCorrected)$kras_status <- kras_status
+
+kfsysccQcedExpressionSet <- exprSetCorrected
+save("kfsysccQcedExpressionSet", file=file.path(tempdir(), "kfsysccQcedExpressionSet.rda"))
+```
+
+Once this final processing was complete, all patients who did not have KRAS status evaluated were removed from the dataset and will not be used for further analysis. This final R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on the samples within the `phenoData` slot of the object.
