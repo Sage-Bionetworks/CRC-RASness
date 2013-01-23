@@ -101,7 +101,7 @@ exprs(exprSetCorrected) <- exprGene
 sGene <- fs(exprGene)
 ```
 
-The gene-specific fitted values of age were removed from the expression matrix and the first SVD was used to collapse multiple probesets to a single expression value per gene. SVD plots were repeated on this further normalized and summarized data to ensure no artifacts were introduced in this process.
+The gene-specific fitted values of age were removed from the expression matrix (gender information not available) and the first SVD was used to collapse multiple probesets to a single expression value per gene. SVD plots were repeated on this further normalized and summarized data to ensure no artifacts were introduced in this process.
 
 ```{r normSvd, echo=FALSE}
 xyplot(sGene$d ~ 1:length(sGene$d),
