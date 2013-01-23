@@ -15,6 +15,13 @@ mergeAcross <- function(...){
   return(these)
 }
 
+## CONVENIENCE FUNCTION FOR SVD EVALUATIONS
+fs <- function(x){
+  require(corpcor)
+  u <- fast.svd(t(scale(t(x), scale = FALSE)), tol = 0)
+  u$d <- u$d^2/sum(u$d^2)
+  return(u)
+}
 
 
 buildTopTableFromCorrelationMatrix <- function(C, idxs, top=20){
