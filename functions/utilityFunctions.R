@@ -23,6 +23,18 @@ fs <- function(x){
   return(u)
 }
 
+## READ IN FILES AS FORMATED BY TCGA PAN CANCER GROUP
+loadTCGAFileFromEntity <- function(synId){
+  require(synapseClient)
+  
+  ent <- downloadEntity(synId)
+  df <- read.delim(file.path(ent$cacheDir, ent$files), header=F, as.is=T)
+  colnames(df) <- as.character(df[1, ])
+  df <- df[-1, ]
+  rownames(df) <- as.character(df[, 1])
+  df <- df[, -1]
+  return(df)
+}
 
 buildTopTableFromCorrelationMatrix <- function(C, idxs, top=20){
 	lblsCol <- colnames(C)
