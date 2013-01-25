@@ -1,4 +1,4 @@
 ## Modeling RAS Pathway Activity in Colorectal Cancer (CRC)
-### Contributors: Justin Guinney, Jonathan M. Derry, Charles Ferte, Erich S. Huang, Brian M. Bot
+### Contributors: Justin Guinney, Jonathan M. Derry, Charles Ferte, Erich S. Huang, Brian M. Bot, Stephen H. Friend
 
 KRAS mutational status is used clinically to direct treatment with EGFR monoclonal antibodies to the patients most likely to benefit. It is however an imprecise predictor of response; a significant fraction of patients with wild-type KRAS fail to show objective response to EGFR blockade while some small fraction of KRAS mutant tumors may benefit from treatment. Given the unprecedented availability of multiple large CRC data sets with genetic and gene expression profiling, we are now able to interrogate Ras biology in high resolution. The present study aims to provide a more precise and quantitative metric for describing a “RAS-activated” pathway, to expand the criteria of activating mechanisms beyond the canonical mutations of KRAS (specifically codons 12, 13 & 61), and thereby to improve the prediction of drug response using targeted therapies.
