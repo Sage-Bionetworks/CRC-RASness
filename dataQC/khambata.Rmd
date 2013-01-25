@@ -66,3 +66,4 @@ xyplot(sGene$v[,2] ~ sGene$v[,1],
        ylab="2nd svd")
 ```
 
+This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.

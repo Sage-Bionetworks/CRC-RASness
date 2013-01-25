@@ -1,4 +1,4 @@
-Expression data from the Illumina Hi-seq machines (RNAseqV2 data frozen by the TCGA Pan Cancer Analysis Group) and their corresponding clinical data were consolidated across the Colon Adenocarcinoma (COAD) and Rectum Adenocarcinoma (READ) cohorts from TCGA.
+Expression data from the Illumina Hi-seq machines (RNAseqV2 data frozen by the TCGA Pan Cancer Analysis Group) and their corresponding clinical data were consolidated across the Colon Adenocarcinoma (COAD) and Rectum Adenocarcinoma (READ) cohorts from TCGA. Only genes that had at least one sample with at least one count was included in QC processing. Values were transformed by adding one and taking the log base 2 (`log2(expr+1)`).
 
 ```{r loadData, include=FALSE}
 ## FUNCTIONS TO EXTRACT DATA OBJECTS FROM SYNAPSE AND QC
@@ -116,4 +116,4 @@ tcgaRNAseqQcedExpressionSet <- ExpressionSet(exprAdj)
 pData(tcgaRNAseqQcedExpressionSet) <- clin
 ```
 
-The resulting R object is of class ExpressionSet and includes both expression and clinical data.
+This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.

@@ -126,4 +126,4 @@ kfsysccQcedExpressionSet <- exprSetCorrected
 save("kfsysccQcedExpressionSet", file=file.path(tempdir(), "kfsysccQcedExpressionSet.rda"))
 ```
 
-Once this final processing was complete, all patients who did not have KRAS status evaluated were removed from the dataset and will not be used for further analysis. This final R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on the samples within the `phenoData` slot of the object.
+Once this final processing was complete, all patients who did not have KRAS status evaluated were removed from the dataset and will not be used for further analysis. This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.
