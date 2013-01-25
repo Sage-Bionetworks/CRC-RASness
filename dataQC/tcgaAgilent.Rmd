@@ -1,0 +1,110 @@
+Expression data from the Agilent G4502A chip (data frozen by the TCGA Pan Cancer Analysis Group) and their corresponding clinical data were consolidated across the Colon Adenocarcinoma (COAD) and Rectum Adenocarcinoma (READ) cohorts from TCGA.
+
+```{r loadData, include=FALSE}
+## FUNCTIONS TO EXTRACT DATA OBJECTS FROM SYNAPSE AND QC
+#####
+## ANALYST: BRIAN M. BOT
+#####
+
+require(synapseClient)
+require(rGithubClient)
+require(Biobase)
+require(corpcor)
+require(lattice)
+
+## SOURCE IN THE DATA EXTRACTION FUNCTIONS
+myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
+                  ref="branch", refName="dev")
+sourceRepoFile(myRepo, "functions/utilityFunctions.R")
+
+## CREATE A DIRECTORY FOR PLOTS TO BE UPLOADED TO SYNAPSE
+tcgaAgilentDir <- file.path(tempdir(), "tcgaAgilentQC")
+dir.create(tcgaAgilentDir)
+
+coadAgilent <- loadTCGAFileFromEntity("syn417828")
+readAgilent <- loadTCGAFileFromEntity("syn418082")
+
+if( all(rownames(coadAgilent) == rownames(readAgilent)) ){
+  theseFeatures <- rownames(coadAgilent)
+  crcAgilent <- cbind(coadAgilent, readAgilent)
+} else{
+  stop("rownames do not match")
+}
+
+thesePatients <- sapply(strsplit(colnames(crcAgilent), "-", fixed=T), function(x){
+  paste(x[1:3], collapse="-")
+})
+
+if( all(duplicated(thesePatients) == FALSE) ){
+  colnames(crcAgilent) <- thesePatients
+} else{
+  stop("duplicated patients")
+}
+
+## CONVERT TO NUMERIC MATRIX
+crcAgilent <- apply(crcAgilent, 2, as.numeric)
+rownames(crcAgilent) <- theseFeatures
+expr <- crcAgilent
+
+## GRAB THE CLINICAL DATA
+coadClin <- loadTCGAFileFromEntity("syn1446080")
+readClin <- loadTCGAFileFromEntity("syn1446153")
+coadClin$rns <- rownames(coadClin)
+readClin$rns <- rownames(readClin)
+
+crcClin <- merge(x=coadClin, y=readClin, all=T)
+rownames(crcClin) <- crcClin$rns
+crcClin$rns <- NULL
+clin <- crcClin
+
+## SUBSET TO COHORT OF INTEREST
+clin <- clin[colnames(expr), ]
+
+## REMOVE GENES WHERE AT LEAST ONE PATIENT HAS A MISSING VALUE
+expr <- expr[ rowSums(is.na(expr)) == 0, ]
+
+## SVD ON EXPRESSION MATRIX -- ASSESS OVERALL STRUCTURE AND POSSIBLE LATENT STRUCTURE
+s <- fs(expr)
+```
+
+Expression values were already consolidated to the gene level, but were assessed for latent structure in the data by exploring the Singular Value Decomposition (SVD). As can be seen in plots below, there does not appear to be any latent structure.
+
+```{r svdRaw, echo=FALSE}
+xyplot(s$d ~ 1:length(s$d),
+       xaxt="n",
+       xlab="eigen gene",
+       ylab="% variance explained")
+xyplot(s$v[,2] ~ s$v[,1], groups=factor(ifelse(grepl("RECTUM", clin$tumor_tissue_site), "rectum", "colon")),
+       xlab="1st svd",
+       ylab="2nd svd", auto.key=list(space="right"))
+```
+
+As with all datasets in this analysis, age and gender effects were removed on a gene-by-gene basis when this information was available. The following plots are SVD plots after age and gender effects were removed to ensure this did not introduce any unwanted effects to the data.
+
+```{r adjustExpression, include=FALSE}
+## ADJUST DATA FOR AGE AND GENDER
+fit <- lmFit(expr, model.matrix(~as.numeric(clin$age_at_initial_pathologic_diagnosis) + factor(clin$gender)))
+exprAdj <- residuals(fit, expr)
+
+## PLOTS FOR ADJUSTED EXPRESSION
+sAdj <- fs(exprAdj)
+```
+
+
+```{r svdAdjusted, echo=FALSE}
+xyplot(sAdj$d ~ 1:length(sAdj$d),
+       xaxt="n",
+       xlab="eigen gene",
+       ylab="% variance explained")
+xyplot(sAdj$v[,2] ~ sAdj$v[,1], groups=factor(grepl("RECTUM", clin$tumor_tissue_site)),
+       xlab="1st svd",
+       ylab="2nd svd")
+```
+
+
+```{r saveObject, include=FALSE}
+tcgaRNAseqQcedExpressionSet <- ExpressionSet(exprAdj)
+pData(tcgaRNAseqQcedExpressionSet) <- clin
+```
+
+The resulting R object is of class ExpressionSet and includes both expression and clinical data.
