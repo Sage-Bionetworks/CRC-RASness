@@ -61,7 +61,7 @@ NUSE(pset, main="NUSE for CRC322")
 rm(pset)
 ```
 
-Given the high NUSE for samples collected before 01/01/2007, those 15 samples were removed from all further analyses. We then ran `rma` on the resulting 307 samples which consolidates the feature space down to 54,675 probesets. Singular Value Decomposition (SVD) was performed on the resulting expression matrix to assess its structure.
+Given the high NUSE for samples collected before 01/01/2007, those 15 samples were removed from all further analyses. We then ran `rma` on the resulting 307 samples which consolidates the feature space down to 54,675 probesets. The first Singular Value was used to collapse multiple probesets to a single expression value per gene. Singular Value Decomposition (SVD) was performed on the entire resulting expression matrix to assess its structure.
 
 ```{r subset, include=FALSE}
 # REMOVE EARLY SAMPLES; LARGE SE FROM NUSE PLOT
@@ -69,8 +69,13 @@ kooRaw <- kooRaw[ , scanDate > "01/01/07" ]
 exprSet <- rma(kooRaw)
 expr <- exprs(exprSet)
 
+## COMBINE TO ONE PROBE PER GENE
+mapDat <- unlist(as.list(hgu133plus2SYMBOL))[ rownames(expr) ]
+exprGene <- combineProbesToGene(expr, mapDat)
+exprs(exprSet) <- exprGene
+
 ## SVD ON EXPRESSION MATRIX -- ASSESS OVERALL STRUCTURE AND POSSIBLE LATENT STRUCTURE
-s <- fs(expr)
+s <- fs(exprGene)
 ```
 
 ```{r rawSvd, echo=FALSE}
@@ -89,26 +94,21 @@ The first SVD appears to explain about 20% of the variation and did not appear s
 fit <- lmFit(exprSet, model.matrix(~as.numeric(pData(exprSet)$AGE)))
 bfit <- eBayes(fit)
 #hist(bfit$p.value[,2], main="Limma: Effect of age on gene expression", xlab="p-value")
-exprSetCorrected <- exprSet
-exprs(exprSetCorrected) <- exprs(exprSet) - fitted.values(fit)
-
-## COMBINE TO ONE PROBE PER GENE
-mapDat <- unlist(as.list(hgu133plus2SYMBOL))[ rownames(expr) ]
-exprGene <- combineProbesToGene(exprs(exprSetCorrected), mapDat)
-exprs(exprSetCorrected) <- exprGene
+exprSetAdj <- exprSet
+exprs(exprSetAdj) <- exprs(exprSet) - fitted.values(fit)
 
 ## MAKE SURE NO LARGE AMOUNTS OF VARIATION HAVE BEEN ADDED BY PROCESS
-sGene <- fs(exprGene)
+sAdj <- fs(exprs(exprSetAdj))
 ```
 
-The gene-specific fitted values of age were removed from the expression matrix (gender information not available) and the first SVD was used to collapse multiple probesets to a single expression value per gene. SVD plots were repeated on this further normalized and summarized data to ensure no artifacts were introduced in this process.
+The gene-specific fitted values of age were removed from the expression matrix (gender information not available). SVD plots were repeated on this further normalized and summarized data to ensure no artifacts were introduced in this process.
 
-```{r normSvd, echo=FALSE}
-xyplot(sGene$d ~ 1:length(sGene$d),
+```{r svdAdj, echo=FALSE}
+xyplot(sAdj$d ~ 1:length(sAdj$d),
        xaxt="n",
        xlab="eigen gene",
        ylab="% variance explained")
-xyplot(sGene$v[,2] ~ sGene$v[,1],
+xyplot(sAdj$v[,2] ~ sAdj$v[,1],
        xlab="1st svd",
        ylab="2nd svd")
 ```
@@ -116,13 +116,13 @@ xyplot(sGene$v[,2] ~ sGene$v[,1],
 ```{r saveObject, include=FALSE}
 ## FINALIZE THE SAMPLES THAT WILL BE KEPT FOR FURTHER ANALYSIS
 ## REMOVE UNANNOTATED KRAS
-exprSetCorrected <- exprSetCorrected[ , pData(exprSetCorrected)$KRAS_Mutation != "NaN"]
-kras_status <- pData(exprSetCorrected)$KRAS_Mutation
+exprSetAdj <- exprSetAdj[ , pData(exprSetAdj)$KRAS_Mutation != "NaN"]
+kras_status <- pData(exprSetAdj)$KRAS_Mutation
 kras_status[kras_status=="None"] <- "WT"
 kras_status[kras_status=="Yes"] <- "MUT"
-pData(exprSetCorrected)$kras_status <- kras_status
+pData(exprSetAdj)$kras_status <- kras_status
 
-kfsysccQcedExpressionSet <- exprSetCorrected
+kfsysccQcedExpressionSet <- exprSetAdj
 save("kfsysccQcedExpressionSet", file=file.path(tempdir(), "kfsysccQcedExpressionSet.rda"))
 ```
 

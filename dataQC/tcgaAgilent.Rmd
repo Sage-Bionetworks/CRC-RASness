@@ -9,6 +9,7 @@ Expression data from the Agilent G4502A chip (data frozen by the TCGA Pan Cancer
 require(synapseClient)
 require(rGithubClient)
 require(Biobase)
+require(limma)
 require(corpcor)
 require(lattice)
 

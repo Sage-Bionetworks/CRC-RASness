@@ -1,3 +1,4 @@
+The raw Khambata-Ford gene expression data was accessed through Gene Expression Omnibus (GEO) available through its unique id [GSE5851](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE5851). All samples were pre-treatment metastatic biopsies of CRC although the site of metastases differed per subject. These data were generated on the Affymetrix Human Genome U133A 2.0 Array. These data were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all samples.
 
 ```{r loadData, include=FALSE}
 ## SCRIPT TO QC AND PROCESS THE KHAMBATA-FORD DATASET
@@ -7,25 +8,66 @@
 
 require(synapseClient)
 require(rGithubClient)
+require(affy)
+require(affyPLM)
+require(limma)
 require(corpcor)
+require(chron)
 require(lattice)
+require(hgu133a2.db)
+
+options(stringsAsFactors=FALSE)
 
 ## SOURCE IN THE DATA EXTRACTION FUNCTIONS
 myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
                   ref="branch", refName="dev")
 sourceRepoFile(myRepo, "functions/utilityFunctions.R")
 
+## READ IN DATA FROM GEO (POINTED TO FROM SYNAPSE COMMONS REPOSITORY)
+celFiles <- downloadEntity("syn235426")
+khamAffy <- ReadAffy(filenames=file.path(celFiles$cacheDir, celFiles$files))
 
+## READ IN CLINICAL DATA IN SYNAPSE WHICH WAS DOWNLOADED FROM JCO PUB
+clinFile <- downloadEntity("syn1661833")
+khamClin <- read.delim(file.path(clinFile$cacheDir, clinFile$files), as.is=T)
+khamClin <- khamClin[ !is.na(khamClin$GEO.ID), ]
+rownames(khamClin) <- paste(khamClin$GEO.ID, ".CEL.gz", sep="")
+khamClin <- khamClin[sampleNames(khamAffy), ]
 
-## PULL IN THE DATA AND SUBSET TO COHORT OF INTEREST (TUMOR SAMPLES)
-exprSet <- getKhambataFromGEO()
-expr <- exprs(exprSet)
-clin <- pData(exprSet)
-feat <- exprSet@featureData@data
+khamClin$scanDate <- protocolData(khamAffy)$ScanDate
+khamClin$scanDate <- chron(gsub(" .*", "", khamClin$scanDate))
+## FOR MISSING AGE - SET TO MEAN AGE
+khamClin$Age[is.na(khamClin$Age)] <- mean(khamClin$Age, na.rm=T)
 
-## SVD ON EXPRESSION MATRIX -- ASSESS OVERALL STRUCTURE AND POSSIBLE LATENT STRUCTURE
-s <- fs(expr)
+## ORDER SAMPLES IN CHRONOLOGICAL ORDER OF SCAN DATE
+pData(khamAffy) <- khamClin
+khamAffy <- khamAffy[, order(khamClin$scanDate)]
+
+## PERFORM SOME PRELIMINARY QC
+pset <- fitPLM(khamAffy)
 ```
+
+```{r plmPlots, echo=FALSE}
+par(mfrow=c(2,1))
+RLE(pset, main="RLE for Khambata-Ford")
+NUSE(pset, main="NUSE for Khambata-Ford")
+par(mfrow=c(1,1))
+```
+
+Given the high NUSE for one sample (third from last), that sample was removed from further analysis.
+
+```{r}
+khamAffy <- khamAffy[, sampleNames(khamAffy)[-(length(sampleNames(khamAffy))-2)]]
+exprSet <- rma(khamAffy)
+expr <- exprs(exprSet)
+mapDat <- unlist(as.list(hgu133a2SYMBOL))[ rownames(expr) ]
+exprGene <- combineProbesToGene(expr, mapDat)
+exprs(exprSet) <- exprGene
+
+s <- fs(exprGene)
+```
+
+We then ran `rma` on the resulting 79 samples which consolidates the feature space down to 22,277 probesets. The first SVD was used to collapse multiple probesets to a single expression value per gene. Singular Value Decomposition (SVD) was performed on the resulting expression matrix to assess its structure.
 
 ```{r svdRaw, echo=FALSE}
 xyplot(s$d ~ 1:length(s$d),
@@ -37,33 +79,29 @@ xyplot(s$v[,2] ~ s$v[,1],
        ylab="2nd svd")
 ```
 
-```{r toGene, include=FALSE}
-## LOTS OF VARIATION (DUE TO DIFFERENT TISSUE TYPES?)
+The first eigen gene explains around 40\% of the variation. There appears to be major latent structure in these data, which cannot be explained any of the variables (particularly tissue) provided by experimentalists. Age and gender effects were then removed from the matrix.
 
-## ONE MAJOR OUTLIER
-# > colnames(expr)[ which(s$v[,2] < -.7) ]
-# [1] "GSM136626"
-# Tissue: Adrenal gland; Kidney
+```{r exprAdj, include=FALSE}
+fit <- lmFit(exprSet, model.matrix(~factor(pData(exprSet)$Sex) + as.numeric(pData(exprSet)$Age) ))
+exprSetAdj <- exprSet
+exprs(exprSetAdj) <- exprs(exprSet) - fitted.values(fit)
 
-## COMBINE TO ONE PROBE PER GENE
-idx <- (is.na(feat$"Gene ID")) | (feat$"Gene ID" == "")
-expr <- expr[ !idx, ]
-feat <- feat[ !idx, ]
-
-exprGene <- combineProbesToGene(expr, feat$"Gene ID")
-
-## MAKE SURE NO LARGE AMOUNTS OF VARIATION HAVE BEEN ADDED BY PROCESS
-sGene <- fs(exprGene)
+sAdj <- fs(exprs(exprSetCorrected))
 ```
 
-```{r svdGene, echo=FALSE}
-xyplot(sGene$d ~ 1:length(sGene$d),
+```{r svdAdj, echo=FALSE}
+xyplot(sAdj$d ~ 1:length(sAdj$d),
        xaxt="n",
        xlab="eigen gene",
        ylab="% variance explained")
-xyplot(sGene$v[,2] ~ sGene$v[,1],
+xyplot(sAdj$v[,2] ~ sAdj$v[,1],
        xlab="1st svd",
        ylab="2nd svd")
+```
+
+```{r}
+khambatafordQcedExpressionSet <- exprSetAdj
+save("khambatafordQcedExpressionSet", file=file.path(tempdir(), "khambatafordQcedExpressionSet.rda"))
 ```
 
 This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.
