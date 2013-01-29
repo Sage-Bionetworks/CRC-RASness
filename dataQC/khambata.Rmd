@@ -79,7 +79,7 @@ xyplot(s$v[,2] ~ s$v[,1],
        ylab="2nd svd")
 ```
 
-The first eigen gene explains around 40\% of the variation. There appears to be major latent structure in these data, which cannot be explained any of the variables (particularly tissue) provided by experimentalists. Age and gender effects were then removed from the matrix.
+The first eigen gene explains around 40\% of the variation. There appears to be major latent structure in these data, which cannot be explained any of the variables (particularly tissue) provided by experimentalists. Age and gender effects were subsequently removed. The following plots are SVD plots after age and gender effects were removed to ensure this did not introduce any further effects into the data.
 
 ```{r exprAdj, include=FALSE}
 fit <- lmFit(exprSet, model.matrix(~factor(pData(exprSet)$Sex) + as.numeric(pData(exprSet)$Age) ))

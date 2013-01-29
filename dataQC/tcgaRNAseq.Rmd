@@ -89,7 +89,7 @@ xyplot(s$v[,2] ~ s$v[,1], groups=factor(grepl("RECTUM", clin$tumor_tissue_site))
        ylab="2nd svd")
 ```
 
-As with all datasets in this analysis, age and gender effects were removed on a gene-by-gene basis when this information was available. The following plots are SVD plots after age and gender effects were removed to ensure this did not introduce any unwanted effects to the data.
+Age and gender effects were subsequently removed. The following plots are SVD plots after age and gender effects were removed to ensure this did not introduce any unwanted effects to the data.
 
 ```{r adjustExpression, include=FALSE}
 ## ADJUST DATA FOR AGE AND GENDER

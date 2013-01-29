@@ -101,7 +101,7 @@ exprs(exprSetAdj) <- exprs(exprSet) - fitted.values(fit)
 sAdj <- fs(exprs(exprSetAdj))
 ```
 
-The gene-specific fitted values of age were removed from the expression matrix (gender information not available). SVD plots were repeated on this further normalized and summarized data to ensure no artifacts were introduced in this process.
+The gene-specific fitted values of age were removed from the expression matrix (gender information not available). The following plots are SVD plots after age effects were removed to ensure this did not introduce any unwanted effects to the data.
 
 ```{r svdAdj, echo=FALSE}
 xyplot(sAdj$d ~ 1:length(sAdj$d),

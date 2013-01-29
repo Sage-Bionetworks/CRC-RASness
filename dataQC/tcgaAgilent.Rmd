@@ -68,7 +68,7 @@ expr <- expr[ rowSums(is.na(expr)) == 0, ]
 s <- fs(expr)
 ```
 
-Expression values were already consolidated to the gene level, but were assessed for latent structure in the data by exploring the Singular Value Decomposition (SVD). As can be seen in plots below, there does not appear to be any latent structure.
+Expression values were already consolidated to the gene level, but were assessed for latent structure in the data by exploring the Singular Value Decomposition (SVD). See below:
 
 ```{r svdRaw, echo=FALSE}
 xyplot(s$d ~ 1:length(s$d),

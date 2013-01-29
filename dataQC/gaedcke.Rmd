@@ -74,7 +74,8 @@ xyplot(s$v[,2] ~ s$v[,1],
        ylab="2nd svd")
 ```
 
-The first two singular values were not strongly associated with any clinical covariates and there appears to be no single outlier nor distinct group of outliers. The effects of age and gender were subsequently removed from the data by removing the gene-specific fitted values of a linear model with age and gender included.SVD plots were repeated to ensure no artifacts were introduced in this process.
+The first two singular values were not strongly associated with any clinical covariates and there appears to be no single outlier nor distinct group of outliers. Age and gender effects were subsequently removed. The following plots are SVD plots after age and gender effects were removed to ensure this did not introduce any unwanted effects to the data.
+
 
 ```{r adjustExpression, include=FALSE}
 ## ADJUST DATA FOR AGE AND GENDER
