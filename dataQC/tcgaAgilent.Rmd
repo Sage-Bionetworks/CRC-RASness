@@ -106,6 +106,7 @@ xyplot(sAdj$v[,2] ~ sAdj$v[,1], groups=factor(grepl("RECTUM", clin$tumor_tissue_
 ```{r saveObject, include=FALSE}
 tcgaRNAseqQcedExpressionSet <- ExpressionSet(exprAdj)
 pData(tcgaRNAseqQcedExpressionSet) <- clin
+save(tcgaRNAseqQcedExpressionSet, file=file.path(tempdir(), "tcgaRNAseqQcedExpressionSet.rbin"))
 ```
 
 This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.

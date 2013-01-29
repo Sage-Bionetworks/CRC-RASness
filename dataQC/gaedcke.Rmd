@@ -101,7 +101,7 @@ xyplot(sAdj$v[,2] ~ sAdj$v[,1],
 
 ```{r saveObject, include=FALSE}
 gaedckeQcedExpressionSet <- exprSetAdj
-save("gaedckeQcedExpressionSet", file=file.path(tempdir(), "gaedckeQcedExpressionSet.rda"))
+save("gaedckeQcedExpressionSet", file=file.path(tempdir(), "gaedckeQcedExpressionSet.rbin"))
 ```
 
 This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.
