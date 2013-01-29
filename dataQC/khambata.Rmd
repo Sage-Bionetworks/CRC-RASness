@@ -86,7 +86,7 @@ fit <- lmFit(exprSet, model.matrix(~factor(pData(exprSet)$Sex) + as.numeric(pDat
 exprSetAdj <- exprSet
 exprs(exprSetAdj) <- exprs(exprSet) - fitted.values(fit)
 
-sAdj <- fs(exprs(exprSetCorrected))
+sAdj <- fs(exprs(exprSetAdj))
 ```
 
 ```{r svdAdj, echo=FALSE}
