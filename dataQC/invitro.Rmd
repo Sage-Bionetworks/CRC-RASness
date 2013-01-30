@@ -84,9 +84,30 @@ xyplot(s$v[,2] ~ s$v[,1], groups=factor(pData(exprSet)$cell_line),
        ylab="2nd svd")
 ```
 
-The first two eigen genes quite clearly separate into the three different cell lines HCT116, HT29, and SW480.
+The first two eigen genes quite clearly separate into the three different cell lines HCT116, HT29, and SW480. These two eigen values were regressed out of expression values. SVD plots below show the structure of the expression matrix after removing those effects.
 
-```{r}
+```{r adjustData, include=FALSE}
+fit <- lmFit(exprGene, model.matrix(~ s$v[, 1] + s$v[, 2]))
+exprAdj <- residuals(fit, exprGene)
+exprs(exprSet) <- exprAdj
+
+## PLOTS FOR ADJUSTED EXPRESSION
+sAdj <- fs(exprAdj)
+```
+
+```{r svdAdj, echo=FALSE}
+xyplot(sAdj$d ~ 1:length(sAdj$d),
+       xaxt="n",
+       xlab="eigen gene",
+       ylab="% variance explained")
+xyplot(sAdj$v[,2] ~ sAdj$v[,1], groups=factor(pData(exprSet)$cell_line),
+       xlab="1st svd",
+       ylab="2nd svd")
+```
+
+After removing the first two eigen values, SVD plots look much less worrisome.
+
+```{r saveObject, include=FALSE}
 invitroQcedExpressionSet <- exprSet
 save("invitroQcedExpressionSet", file=file.path(tempdir(), "invitroQcedExpressionSet.rbin"))
 ```
