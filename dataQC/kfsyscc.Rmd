@@ -1,6 +1,9 @@
 KFSYSCC generously provided 322 CRC samples with expression profiling on the Affymetrix U133 Plus 2 platform. These samples were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all 322 samples.
 
 ```{r loadData, include=FALSE}
+#outputFilePath = file.path(tempdir(), "kfsysccQcedExpressionSet.rbin")
+#used = c("syn1528362", "syn1588162")
+
 ## SCRIPT TO QC AND PROCESS THE KOO FOUNDATION DATASET
 #####
 ## ANALYST: BRIAN M. BOT

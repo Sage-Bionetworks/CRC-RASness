@@ -1,6 +1,9 @@
 The Gaedcke gene expression data was accessed through Gene Expression Omnibus (GEO) using their R package `GEOquery` and its unique id [GSE20842](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE20842). These data were generated on the Agilent-014850 Whole Human Genome Microarray 4x44K G4112F and were reported as being previously quantile normalized using the `limma` package in R before being uploaded to GEO. We extracted the subset of samples which were designated as tumor tissue and removed probes for which there was no gene symbol associated. The first Singular Value was then used to collapse multiple probe to a single expression value per gene where necessary. Singular Value Decomposition (SVD) was performed on the entire resulting expression matrix to assess its structure, as seen below.
 
 ```{r loadData, include=FALSE}
+#outputFilePath = file.path(tempdir(), "gaedckeQcedExpressionSet.rbin")
+#used = list() ## ALL PULL FROM GEO with getGEO()
+
 ## SCRIPT TO QC AND PROCESS THE GAEDCKE DATASET
 #####
 ## ANALYST: BRIAN M. BOT

@@ -1,0 +1,94 @@
+The raw gene expression data for the *in vitro* cell line  was accessed through Gene Expression Omnibus (GEO) available through its unique id [GSE18232](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE18232). There were 18 samples, six each of HCT116, HT29, and SW480 colorectal cell lines. These data were generated on the Affymetrix Human Genome U133A 2.0 Array. These data were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all samples.
+
+```{r loadData, include=FALSE}
+#outputFilePath = file.path(tempdir(), "invitroQcedExpressionSet.rbin")
+#used = c("syn235812", "syn338402")
+
+## SCRIPT TO QC AND PROCESS THE EXPRESSION DATA FROM CRC CELL LINES (IN VITRO)
+#####
+## ANALYST: BRIAN M. BOT
+#####
+
+require(synapseClient)
+require(rGithubClient)
+require(affy)
+require(affyPLM)
+require(limma)
+require(corpcor)
+require(chron)
+require(lattice)
+require(hgu133a.db)
+
+options(stringsAsFactors=FALSE)
+
+## SOURCE IN THE DATA EXTRACTION FUNCTIONS
+myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
+                  ref="branch", refName="dev")
+sourceRepoFile(myRepo, "functions/utilityFunctions.R")
+
+## READ IN DATA FROM GEO (POINTED TO FROM SYNAPSE COMMONS REPOSITORY)
+celFiles <- downloadEntity("syn235812")
+invitroAffy <- ReadAffy(filenames=file.path(celFiles$cacheDir, celFiles$files))
+
+
+## READ IN CLINICAL DATA
+clinFile <- downloadEntity("syn338402")
+invitroClin <- read.delim(file.path(clinFile$cacheDir, clinFile$files), as.is=T)
+colnames(invitroClin) <- sub("X.", "", colnames(invitroClin), fixed=T)
+rownames(invitroClin) <- paste(invitroClin$Sample_geo_accession, ".CEL.gz", sep="")
+invitroClin <- invitroClin[ sampleNames(invitroAffy), ]
+
+## PARSE OUT CELL LINE NAME
+invitroClin$cell_line <- sapply(strsplit(invitroClin$Sample_characteristics_ch1, ": ", fixed=T), "[[", 2)
+
+
+invitroClin$scanDate <- protocolData(invitroAffy)$ScanDate
+invitroClin$scanDate <- chron(gsub(" .*", "", invitroClin$scanDate))
+
+## ORDER SAMPLES IN CHRONOLOGICAL ORDER OF SCAN DATE
+pData(invitroAffy) <- invitroClin
+invitroAffy <- invitroAffy[, order(invitroClin$scanDate)]
+
+## PERFORM SOME PRELIMINARY QC
+pset <- fitPLM(invitroAffy)
+```
+
+```{r plmPlots, echo=FALSE}
+par(mfrow=c(2,1))
+RLE(pset, main="RLE for CRC invitro")
+NUSE(pset, main="NUSE for CRC invitro")
+par(mfrow=c(1,1))
+```
+
+Given the high NUSE for one sample (third from last), that sample was removed from further analysis.
+
+```{r}
+exprSet <- rma(invitroAffy)
+expr <- exprs(exprSet)
+mapDat <- unlist(as.list(hgu133aSYMBOL))[ rownames(expr) ]
+exprGene <- combineProbesToGene(expr, mapDat)
+exprs(exprSet) <- exprGene
+
+s <- fs(exprGene)
+```
+
+We then ran `rma` which consolidates the feature space down to 22,277 probesets. The first SVD was used to collapse multiple probesets to a single expression value per gene (12,704). Singular Value Decomposition (SVD) was performed on the resulting expression matrix to assess its structure.
+
+```{r svdRaw, echo=FALSE}
+xyplot(s$d ~ 1:length(s$d),
+       xaxt="n",
+       xlab="eigen gene",
+       ylab="% variance explained")
+xyplot(s$v[,2] ~ s$v[,1], groups=factor(pData(exprSet)$cell_line),
+       xlab="1st svd",
+       ylab="2nd svd")
+```
+
+The first two eigen genes quite clearly separate into the three different cell lines HCT116, HT29, and SW480.
+
+```{r}
+invitroQcedExpressionSet <- exprSet
+save("invitroQcedExpressionSet", file=file.path(tempdir(), "invitroQcedExpressionSet.rbin"))
+```
+
+This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.

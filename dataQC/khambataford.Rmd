@@ -1,6 +1,9 @@
 The raw Khambata-Ford gene expression data was accessed through Gene Expression Omnibus (GEO) available through its unique id [GSE5851](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE5851). All samples were pre-treatment metastatic biopsies of CRC although the site of metastases differed per subject. These data were generated on the Affymetrix Human Genome U133A 2.0 Array. These data were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all samples.
 
 ```{r loadData, include=FALSE}
+#outputFilePath = file.path(tempdir(), "khambatafordQcedExpressionSet.rbin")
+#used = c("syn235426", "syn1661833")
+
 ## SCRIPT TO QC AND PROCESS THE KHAMBATA-FORD DATASET
 #####
 ## ANALYST: BRIAN M. BOT

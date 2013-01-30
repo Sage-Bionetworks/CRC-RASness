@@ -1,6 +1,9 @@
 Expression data from the Agilent G4502A chip (data frozen by the TCGA Pan Cancer Analysis Group) and their corresponding clinical data were consolidated across the Colon Adenocarcinoma (COAD) and Rectum Adenocarcinoma (READ) cohorts from TCGA.
 
 ```{r loadData, include=FALSE}
+#outputFilePath = file.path(tempdir(), "tcgaAgilentQcedExpressionSet.rbin")
+#used = c("syn417828", "syn418082", "syn1446080", "syn1446153")
+
 ## FUNCTIONS TO EXTRACT DATA OBJECTS FROM SYNAPSE AND QC
 #####
 ## ANALYST: BRIAN M. BOT
