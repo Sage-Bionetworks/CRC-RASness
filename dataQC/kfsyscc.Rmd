@@ -19,10 +19,6 @@ require(corpcor)
 require(lattice)
 require(hgu133plus2.db)
 
-## CREATE A DIRECTORY FOR PLOTS TO BE UPLOADED TO SYNAPSE
-kooDir <- file.path(tempdir(), "kooQC")
-dir.create(kooDir)
-
 ## SOURCE IN UTILITY FUNCTIONS
 myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
                   ref="branch", refName="dev")

@@ -1,10 +1,10 @@
-The raw gene expression data for the MEK inhibition in mouse xenografts was accessed through Array Express through its unique id [E-MEXP-3557](http://www.ebi.ac.uk/arrayexpress/experiments/E-MEXP-3557). These data were generated on a custom Affymetrix array. These data were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all samples.
+The raw gene expression data for the Julien study was accessed through Array Express through its unique id [E-MTAB-991](http://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-991). These data were generated on XXXXXXX. These data were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all samples.
 
 ```{r loadData, include=FALSE}
-#outputFilePath = file.path(tempdir(), "mekInhibitionQcedExpressionSet.rbin")
-#used = c("syn372544", "syn1669720", "syn1669726", "syn1669722")
+#outputFilePath = file.path(tempdir(), "julienQcedExpressionSet.rbin")
+#used = c("syn1669761", "")
 
-## SCRIPT TO QC AND PROCESS THE EXPRESSION DATA FROM E-MEXP-3557
+## SCRIPT TO QC AND PROCESS THE EXPRESSION DATA FROM E-MTAB-991
 #####
 ## ANALYST: BRIAN M. BOT
 #####
@@ -26,50 +26,52 @@ myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
                   ref="branch", refName="dev")
 sourceRepoFile(myRepo, "functions/utilityFunctions.R")
 
-## READ IN DATA FROM GEO (POINTED TO FROM SYNAPSE COMMONS REPOSITORY)
-celFiles <- downloadEntity("syn372544")
-mekInhibitionAffy <- ReadAffy(filenames=file.path(celFiles$cacheDir, celFiles$files))
+## READ IN RAW DATA FROM SYNAPSE
+celFiles1 <- downloadEntity("syn1669761")
+celFiles2 <- downloadEntity("syn1669763")
+celFiles3 <- downloadEntity("syn1669765")
+julienDir <- tempfile(pattern="julienDir")
+dir.create(julienDir)
+untar(file.path(celFiles1$cacheDir, celFiles1$files), exdir = julienDir)
+untar(file.path(celFiles2$cacheDir, celFiles2$files), exdir = julienDir)
+untar(file.path(celFiles3$cacheDir, celFiles3$files), exdir = julienDir)
+theseFiles <- list.celfiles(julienDir, recursive=T, full.names=T)
 
-## CREATE A CUSTOM CDF LIBRARY FOR PROCESSING
-cdfEnt <- downloadEntity("syn1669720")
-cdf <- make.cdf.package(filename=cdfEnt$files,
-                        cdf.path=cdfEnt$cacheDir,
-                        packagename=cleancdfname(mekInhibitionAffy@cdfName),
-                        package.path=tempdir(),
-                        species="Mouse")
-system(sprintf("R CMD INSTALL %s", file.path(tempdir(), cleancdfname(mekInhibitionAffy@cdfName))))
-pkgName <- list(cleancdfname(mekInhibitionAffy@cdfName))
-do.call(require, pkgName)
+julienAffy <- ReadAffy(filenames=theseFiles)
+
 
 ## READ IN CLINICAL DATA
-clinFile <- downloadEntity("syn1669726")
-mekInhibitionClin <- read.delim(file.path(clinFile$cacheDir, clinFile$files), as.is=T)
-rownames(mekInhibitionClin) <- paste(mekInhibitionClin$Source.Name, ".CEL", sep="")
-mekInhibitionClin <- mekInhibitionClin[ sampleNames(mekInhibitionAffy), ]
+clinFile <- downloadEntity("syn1669729")
+julienClin <- read.delim(file.path(clinFile$cacheDir, clinFile$files), as.is=T)
+rownames(julienClin) <- julienClin$Array.Data.File
+julienClin <- julienClin[ sampleNames(julienAffy), ]
 
-mekInhibitionClin$scanDate <- protocolData(mekInhibitionAffy)$ScanDate
-mekInhibitionClin$scanDate <- chron(gsub("T.*", "", mekInhibitionClin$scanDate), format=c(dates="y-m-d"))
+
+
+
+julienClin$scanDate <- protocolData(julienAffy)$ScanDate
+julienClin$scanDate <- chron(gsub("T.*", "", julienClin$scanDate), format=c(dates="y-m-d"))
 
 ## ORDER SAMPLES IN CHRONOLOGICAL ORDER OF SCAN DATE
-pData(mekInhibitionAffy) <- mekInhibitionClin
-mekInhibitionAffy <- mekInhibitionAffy[, order(mekInhibitionClin$scanDate)]
+pData(julienAffy) <- julienClin
+julienAffy <- julienAffy[, order(julienClin$scanDate)]
 
 ## PERFORM SOME PRELIMINARY QC
-pset <- fitPLM(mekInhibitionAffy)
+pset <- fitPLM(julienAffy)
 ```
 
 ```{r plmPlots, echo=FALSE}
 par(mfrow=c(2,1))
-RLE(pset, main="RLE for CRC mekInhibition")
-NUSE(pset, main="NUSE for CRC mekInhibition")
+RLE(pset, main="RLE for CRC julien")
+NUSE(pset, main="NUSE for CRC julien")
 par(mfrow=c(1,1))
 ```
 
 Given the high NUSE, the first sample was removed from further analysis.
 
 ```{r}
-mekInhibitionAffy <- mekInhibitionAffy[, sampleNames(mekInhibitionAffy)[-1] ]
-exprSet <- rma(mekInhibitionAffy)
+julienAffy <- julienAffy[, sampleNames(julienAffy)[-1] ]
+exprSet <- rma(julienAffy)
 
 ## READ IN ADF FILE FOR FURTHER SUMMARIZATION / ANNOTATION
 adfEnt <- downloadEntity("syn1669722")
@@ -90,7 +92,7 @@ xyplot(s$d ~ 1:length(s$d),
        xaxt="n",
        xlab="eigen gene",
        ylab="% variance explained")
-xyplot(s$v[,2] ~ s$v[,1], groups=factor(pData(exprSet)$Factor.Value.COMPOUND.),
+xyplot(s$v[,2] ~ s$v[,1], groups=factor(pData(exprSet)$Factor.Value.CELL_LINE.),
        xlab="1st svd",
        ylab="2nd svd")
 ```
@@ -119,8 +121,8 @@ xyplot(sAdj$v[,2] ~ sAdj$v[,1], groups=factor(pData(exprSet)$Factor.Value.CELL_L
 After removing the first eigen value, SVD plots look much less worrisome.
 
 ```{r saveObject, include=FALSE}
-mekInhibitionQcedExpressionSet <- exprSet
-save("mekInhibitionQcedExpressionSet", file=file.path(tempdir(), "mekInhibitionQcedExpressionSet.rbin"))
+julienQcedExpressionSet <- exprSet
+save("julienQcedExpressionSet", file=file.path(tempdir(), "julienQcedExpressionSet.rbin"))
 ```
 
 This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.
