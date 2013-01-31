@@ -1,0 +1,127 @@
+The raw gene expression data for the MEK inhibition in mouse xenografts was accessed through Array Express through its unique id [E-MEXP-3557](http://www.ebi.ac.uk/arrayexpress/experiments/E-MEXP-3557). These data were generated on a custom Affymetrix array. These data were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all samples.
+
+```{r loadData, include=FALSE}
+#outputFilePath = file.path(tempdir(), "mekInhibitionQcedExpressionSet.rbin")
+#used = c("syn372544", "")
+
+## SCRIPT TO QC AND PROCESS THE EXPRESSION DATA FROM E-MEXP-3557
+#####
+## ANALYST: BRIAN M. BOT
+#####
+
+require(synapseClient)
+require(rGithubClient)
+require(makecdfenv)
+require(affy)
+require(affyPLM)
+require(limma)
+require(corpcor)
+require(chron)
+require(lattice)
+require(hgu133a.db)
+
+options(stringsAsFactors=FALSE)
+
+## SOURCE IN THE DATA EXTRACTION FUNCTIONS
+myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
+                  ref="branch", refName="dev")
+sourceRepoFile(myRepo, "functions/utilityFunctions.R")
+
+## READ IN DATA FROM GEO (POINTED TO FROM SYNAPSE COMMONS REPOSITORY)
+celFiles <- downloadEntity("syn372544")
+mekInhibitionAffy <- ReadAffy(filenames=file.path(celFiles$cacheDir, celFiles$files))
+
+## CREATE A CUSTOM CDF LIBRARY FOR PROCESSING
+cdfEnt <- downloadEntity("syn1669720")
+cdf <- make.cdf.package(filename=cdfEnt$files,
+                        cdf.path=cdfEnt$cacheDir,
+                        packagename=cleancdfname(mekInhibitionAffy@cdfName),
+                        package.path=tempdir(),
+                        species="Mouse")
+system(sprintf("R CMD INSTALL %s", file.path(tempdir(), cleancdfname(mekInhibitionAffy@cdfName))))
+pkgName <- list(cleancdfname(mekInhibitionAffy@cdfName))
+do.call(require, pkgName)
+
+## READ IN CLINICAL DATA
+clinFile <- downloadEntity("syn1669726")
+mekInhibitionClin <- read.delim(file.path(clinFile$cacheDir, clinFile$files), as.is=T)
+rownames(mekInhibitionClin) <- paste(mekInhibitionClin$Source.Name, ".CEL", sep="")
+mekInhibitionClin <- mekInhibitionClin[ sampleNames(mekInhibitionAffy), ]
+
+mekInhibitionClin$scanDate <- protocolData(mekInhibitionAffy)$ScanDate
+mekInhibitionClin$scanDate <- chron(gsub("T.*", "", mekInhibitionClin$scanDate), format=c(dates="y-m-d"))
+
+## ORDER SAMPLES IN CHRONOLOGICAL ORDER OF SCAN DATE
+pData(mekInhibitionAffy) <- mekInhibitionClin
+mekInhibitionAffy <- mekInhibitionAffy[, order(mekInhibitionClin$scanDate)]
+
+## PERFORM SOME PRELIMINARY QC
+pset <- fitPLM(mekInhibitionAffy)
+```
+
+```{r plmPlots, echo=FALSE}
+par(mfrow=c(2,1))
+RLE(pset, main="RLE for CRC mekInhibition")
+NUSE(pset, main="NUSE for CRC mekInhibition")
+par(mfrow=c(1,1))
+```
+
+Given the high NUSE, the first sample was removed from further analysis.
+
+```{r}
+mekInhibitionAffy <- mekInhibitionAffy[, sampleNames(mekInhibitionAffy)[-1] ]
+exprSet <- rma(mekInhibitionAffy)
+
+## READ IN ADF FILE FOR FURTHER SUMMARIZATION / ANNOTATION
+adfEnt <- downloadEntity("syn1669722")
+adf <- read.delim(file.path(adfEnt$cacheDir, adfEnt$files), header=T, as.is=T, skip=10, quote="", comment.char="")
+rownames(adf) <- adf$Composite.Element.Name
+adf <- adf[ featureNames(exprSet), ]
+mask <- adf$Composite.Element.Database.Entry.hugo. != ""
+exprGene <- combineProbesToGene(exprs(exprSet)[mask, ], adf$Composite.Element.Database.Entry.hugo.[mask])
+exprs(exprSet) <- exprGene
+
+s <- fs(exprGene)
+```
+
+We then ran `rma` which consolidates the feature space down to 61,528 probesets. The first SVD was used to collapse multiple probesets to a single expression value per gene (15,531). Singular Value Decomposition (SVD) was performed on the resulting expression matrix to assess its structure.
+
+```{r svdRaw, echo=FALSE}
+xyplot(s$d ~ 1:length(s$d),
+       xaxt="n",
+       xlab="eigen gene",
+       ylab="% variance explained")
+xyplot(s$v[,2] ~ s$v[,1], groups=factor(pData(exprSet)$Factor.Value.CELL_LINE.),
+       xlab="1st svd",
+       ylab="2nd svd")
+```
+
+The first two eigen genes quite clearly separate into the three different cell lines HCT116, HT29, and SW480. These two eigen values were regressed out of expression values. SVD plots below show the structure of the expression matrix after removing those effects.
+
+```{r adjustData, include=FALSE}
+fit <- lmFit(exprGene, model.matrix(~ s$v[, 1]))
+exprAdj <- residuals(fit, exprGene)
+exprs(exprSet) <- exprAdj
+
+## PLOTS FOR ADJUSTED EXPRESSION
+sAdj <- fs(exprAdj)
+```
+
+```{r svdAdj, echo=FALSE}
+xyplot(sAdj$d ~ 1:length(sAdj$d),
+       xaxt="n",
+       xlab="eigen gene",
+       ylab="% variance explained")
+xyplot(sAdj$v[,2] ~ sAdj$v[,1], groups=factor(pData(exprSet)$Factor.Value.CELL_LINE.),
+       xlab="1st svd",
+       ylab="2nd svd")
+```
+
+After removing the first eigen value, SVD plots look much less worrisome.
+
+```{r saveObject, include=FALSE}
+mekInhibitionQcedExpressionSet <- exprSet
+save("mekInhibitionQcedExpressionSet", file=file.path(tempdir(), "mekInhibitionQcedExpressionSet.rbin"))
+```
+
+This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.
