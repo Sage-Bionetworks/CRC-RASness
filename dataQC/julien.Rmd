@@ -16,7 +16,7 @@ require(affy)
 require(affyPLM)
 require(limma)
 require(corpcor)
-require(lattice)
+require(ggplot2)
 require(hgu133a.db)
 
 options(stringsAsFactors=FALSE)
@@ -68,18 +68,18 @@ exprGene <- combineProbesToGene(exprs(exprSet), mapDat)
 exprs(exprSet) <- exprGene
 
 s <- fs(exprGene)
+label <- factor(julienClin$Factor.Value.genetic.modification.)
 ```
 
 We then ran `rma` which consolidates the feature space down to the probeset level. The first SVD was used to collapse multiple probesets to a single expression value per gene (12,704). Singular Value Decomposition (SVD) was performed on the resulting expression matrix to assess its structure.
 
 ```{r svdRaw, echo=FALSE}
-xyplot(s$d ~ 1:length(s$d),
-       xaxt="n",
-       xlab="eigen gene",
-       ylab="% variance explained")
-xyplot(s$v[,2] ~ s$v[,1], groups=factor(julienClin$Factor.Value.genetic.modification.),
-       xlab="1st svd",
-       ylab="2nd svd")
+qplot(1:length(s$d), s$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(s$v[, 1], s$v[, 2], colour=label,
+      xlab="1st svd",
+      ylab="2nd svd")
 ```
 
 The first eigen gene quite clearly separates into the mouse / human labels which was then regressed out of the expression matrix. SVD plots below show the structure of the expression matrix after removing those effects.
@@ -94,13 +94,12 @@ sAdj <- fs(exprAdj)
 ```
 
 ```{r svdAdj, echo=FALSE}
-xyplot(sAdj$d ~ 1:length(sAdj$d),
-       xaxt="n",
-       xlab="eigen gene",
-       ylab="% variance explained")
-xyplot(sAdj$v[,2] ~ sAdj$v[,1],  groups=factor(julienClin$Factor.Value.genetic.modification.),
-       xlab="1st svd",
-       ylab="2nd svd")
+qplot(1:length(sAdj$d), sAdj$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(sAdj$v[, 1], sAdj$v[, 2], colour=label,
+      xlab="1st svd",
+      ylab="2nd svd")
 ```
 
 After removing the first eigen value, SVD plots seem much more reasonable.

@@ -16,7 +16,7 @@ require(affyPLM)
 require(limma)
 require(chron)
 require(corpcor)
-require(lattice)
+require(ggplot2)
 require(hgu133plus2.db)
 
 ## SOURCE IN UTILITY FUNCTIONS
@@ -78,13 +78,12 @@ s <- fs(exprGene)
 ```
 
 ```{r rawSvd, echo=FALSE}
-xyplot(s$d ~ 1:length(s$d),
-       xaxt="n",
-       xlab="singular value",
-       ylab="% variation explained")
-xyplot(s$v[,2] ~ s$v[,1],
-       xlab="1st svd",
-       ylab="2nd svd")
+qplot(1:length(s$d), s$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(s$v[, 1], s$v[, 2],
+      xlab="1st svd",
+      ylab="2nd svd")
 ```
 
 The first SVD appears to explain about 20% of the variation and did not appear strongly associated with any clinical covariates.
@@ -103,13 +102,12 @@ sAdj <- fs(exprs(exprSetAdj))
 The gene-specific fitted values of age were removed from the expression matrix (gender information not available). The following plots are SVD plots after age effects were removed to ensure this did not introduce any unwanted effects to the data.
 
 ```{r svdAdj, echo=FALSE}
-xyplot(sAdj$d ~ 1:length(sAdj$d),
-       xaxt="n",
-       xlab="eigen gene",
-       ylab="% variance explained")
-xyplot(sAdj$v[,2] ~ sAdj$v[,1],
-       xlab="1st svd",
-       ylab="2nd svd")
+qplot(1:length(sAdj$d), sAdj$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(sAdj$v[, 1], sAdj$v[, 2], colour=label,
+      xlab="1st svd",
+      ylab="2nd svd")
 ```
 
 ```{r saveObject, include=FALSE}

@@ -14,7 +14,7 @@ require(rGithubClient)
 require(GEOquery)
 require(Biobase)
 require(limma)
-require(lattice)
+require(ggplot2)
 
 ## SOURCE IN UTILITY FUNCTIONS
 myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
@@ -68,13 +68,12 @@ s <- fs(exprGene)
 
 
 ```{r svdRaw, echo=FALSE}
-xyplot(s$d ~ 1:length(s$d),
-       xaxt="n",
-       xlab="eigen gene",
-       ylab="% variance explained")
-xyplot(s$v[,2] ~ s$v[,1],
-       xlab="1st svd",
-       ylab="2nd svd")
+qplot(1:length(s$d), s$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(s$v[, 1], s$v[, 2],
+      xlab="1st svd",
+      ylab="2nd svd")
 ```
 
 The first two singular values were not strongly associated with any clinical covariates and there appears to be no single outlier nor distinct group of outliers. Age and gender effects were subsequently removed. The following plots are SVD plots after age and gender effects were removed to ensure this did not introduce any unwanted effects to the data.
@@ -93,13 +92,12 @@ sAdj <- fs(exprAdj)
 ```
 
 ```{r svdAdjusted, echo=FALSE}
-xyplot(sAdj$d ~ 1:length(sAdj$d),
-       xaxt="n",
-       xlab="eigen gene",
-       ylab="% variance explained")
-xyplot(sAdj$v[,2] ~ sAdj$v[,1],
-       xlab="1st svd",
-       ylab="2nd svd")
+qplot(1:length(sAdj$d), sAdj$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(sAdj$v[, 1], sAdj$v[, 2],
+      xlab="1st svd",
+      ylab="2nd svd")
 ```
 
 ```{r saveObject, include=FALSE}

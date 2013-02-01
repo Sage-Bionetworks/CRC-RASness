@@ -14,7 +14,7 @@ require(rGithubClient)
 require(Biobase)
 require(limma)
 require(corpcor)
-require(lattice)
+require(ggplot2)
 
 ## SOURCE IN THE DATA EXTRACTION FUNCTIONS
 myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
@@ -78,18 +78,18 @@ expr <- combineProbesToGene(expr, rns[idx])
 
 ## SVD ON EXPRESSION MATRIX -- ASSESS OVERALL STRUCTURE AND POSSIBLE LATENT STRUCTURE
 s <- fs(expr)
+tissue <- factor(ifelse(grepl("RECTUM", clin$tumor_tissue_site), "rectum", "colon"))
 ```
 
 The few genes that had multiple expression values were consolidated to a single value via the first eigen gene. The subsequent expression values were assessed for latent structure by exploring the Singular Value Decomposition (SVD) of the expression matrix. As can be seen in plots below, there does not appear to be any latent structure.
 
 ```{r svdRaw, echo=FALSE}
-xyplot(s$d ~ 1:length(s$d),
-       xaxt="n",
-       xlab="eigen gene",
-       ylab="% variance explained")
-xyplot(s$v[,2] ~ s$v[,1], groups=factor(grepl("RECTUM", clin$tumor_tissue_site)),
-       xlab="1st svd",
-       ylab="2nd svd")
+qplot(1:length(s$d), s$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(s$v[, 1], s$v[, 2], colour=tissue,
+      xlab="1st svd",
+      ylab="2nd svd")
 ```
 
 Age and gender effects were subsequently removed. The following plots are SVD plots after age and gender effects were removed to ensure this did not introduce any unwanted effects to the data.
@@ -105,13 +105,12 @@ sAdj <- fs(exprAdj)
 
 
 ```{r svdAdjusted, echo=FALSE}
-xyplot(sAdj$d ~ 1:length(sAdj$d),
-       xaxt="n",
-       xlab="eigen gene",
-       ylab="% variance explained")
-xyplot(sAdj$v[,2] ~ sAdj$v[,1], groups=factor(grepl("RECTUM", clin$tumor_tissue_site)),
-       xlab="1st svd",
-       ylab="2nd svd")
+qplot(1:length(sAdj$d), sAdj$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(sAdj$v[, 1], sAdj$v[, 2], colour=tissue,
+      xlab="1st svd",
+      ylab="2nd svd")
 ```
 
 

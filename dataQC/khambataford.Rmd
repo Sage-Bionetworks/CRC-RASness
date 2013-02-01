@@ -16,7 +16,7 @@ require(affyPLM)
 require(limma)
 require(corpcor)
 require(chron)
-require(lattice)
+require(ggplot2)
 require(hgu133a2.db)
 
 options(stringsAsFactors=FALSE)
@@ -73,13 +73,12 @@ s <- fs(exprGene)
 We then ran `rma` on the resulting 79 samples which consolidates the feature space down to 22,277 probesets. The first SVD was used to collapse multiple probesets to a single expression value per gene. Singular Value Decomposition (SVD) was performed on the resulting expression matrix to assess its structure.
 
 ```{r svdRaw, echo=FALSE}
-xyplot(s$d ~ 1:length(s$d),
-       xaxt="n",
-       xlab="eigen gene",
-       ylab="% variance explained")
-xyplot(s$v[,2] ~ s$v[,1],
-       xlab="1st svd",
-       ylab="2nd svd")
+qplot(1:length(s$d), s$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(s$v[, 1], s$v[, 2],
+      xlab="1st svd",
+      ylab="2nd svd")
 ```
 
 The first eigen gene explains around 40\% of the variation. There appears to be major latent structure in these data, which cannot be explained any of the variables (particularly tissue) provided by experimentalists. Age and gender effects were subsequently removed. The following plots are SVD plots after age and gender effects were removed to ensure this did not introduce any further effects into the data.
@@ -93,13 +92,12 @@ sAdj <- fs(exprs(exprSetAdj))
 ```
 
 ```{r svdAdj, echo=FALSE}
-xyplot(sAdj$d ~ 1:length(sAdj$d),
-       xaxt="n",
-       xlab="eigen gene",
-       ylab="% variance explained")
-xyplot(sAdj$v[,2] ~ sAdj$v[,1],
-       xlab="1st svd",
-       ylab="2nd svd")
+qplot(1:length(sAdj$d), sAdj$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(sAdj$v[, 1], sAdj$v[, 2], colour=label,
+      xlab="1st svd",
+      ylab="2nd svd")
 ```
 
 ```{r}
