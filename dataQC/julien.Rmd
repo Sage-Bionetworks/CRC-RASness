@@ -2,7 +2,7 @@ The raw gene expression data for the Julien study was accessed through Array Exp
 
 ```{r loadData, include=FALSE}
 #outputFilePath = file.path(tempdir(), "julienQcedExpressionSet.rbin")
-#used = c("syn1669761", "")
+#used = c("syn1669761", "syn1669763", "syn1669765", "syn1669729")
 
 ## SCRIPT TO QC AND PROCESS THE EXPRESSION DATA FROM E-MTAB-991
 #####
@@ -16,8 +16,8 @@ require(affy)
 require(affyPLM)
 require(limma)
 require(corpcor)
-require(chron)
 require(lattice)
+require(hgu133a.db)
 
 options(stringsAsFactors=FALSE)
 
@@ -32,29 +32,19 @@ celFiles2 <- downloadEntity("syn1669763")
 celFiles3 <- downloadEntity("syn1669765")
 julienDir <- tempfile(pattern="julienDir")
 dir.create(julienDir)
-untar(file.path(celFiles1$cacheDir, celFiles1$files), exdir = julienDir)
-untar(file.path(celFiles2$cacheDir, celFiles2$files), exdir = julienDir)
-untar(file.path(celFiles3$cacheDir, celFiles3$files), exdir = julienDir)
+unzip(file.path(celFiles1$cacheDir, celFiles1$files), exdir = julienDir)
+unzip(file.path(celFiles2$cacheDir, celFiles2$files), exdir = julienDir)
+unzip(file.path(celFiles3$cacheDir, celFiles3$files), exdir = julienDir)
 theseFiles <- list.celfiles(julienDir, recursive=T, full.names=T)
 
 julienAffy <- ReadAffy(filenames=theseFiles)
-
 
 ## READ IN CLINICAL DATA
 clinFile <- downloadEntity("syn1669729")
 julienClin <- read.delim(file.path(clinFile$cacheDir, clinFile$files), as.is=T)
 rownames(julienClin) <- julienClin$Array.Data.File
 julienClin <- julienClin[ sampleNames(julienAffy), ]
-
-
-
-
-julienClin$scanDate <- protocolData(julienAffy)$ScanDate
-julienClin$scanDate <- chron(gsub("T.*", "", julienClin$scanDate), format=c(dates="y-m-d"))
-
-## ORDER SAMPLES IN CHRONOLOGICAL ORDER OF SCAN DATE
-pData(julienAffy) <- julienClin
-julienAffy <- julienAffy[, order(julienClin$scanDate)]
+## SCAN DATE NOT AVAILABLE
 
 ## PERFORM SOME PRELIMINARY QC
 pset <- fitPLM(julienAffy)
@@ -67,37 +57,32 @@ NUSE(pset, main="NUSE for CRC julien")
 par(mfrow=c(1,1))
 ```
 
-Given the high NUSE, the first sample was removed from further analysis.
+RLE and NUSE plots do not look overly worrisome.
 
 ```{r}
-julienAffy <- julienAffy[, sampleNames(julienAffy)[-1] ]
 exprSet <- rma(julienAffy)
 
-## READ IN ADF FILE FOR FURTHER SUMMARIZATION / ANNOTATION
-adfEnt <- downloadEntity("syn1669722")
-adf <- read.delim(file.path(adfEnt$cacheDir, adfEnt$files), header=T, as.is=T, skip=10, quote="", comment.char="")
-rownames(adf) <- adf$Composite.Element.Name
-adf <- adf[ featureNames(exprSet), ]
-mask <- adf$Composite.Element.Database.Entry.hugo. != ""
-exprGene <- combineProbesToGene(exprs(exprSet)[mask, ], adf$Composite.Element.Database.Entry.hugo.[mask])
+## COMBINE TO ONE PROBE PER GENE
+mapDat <- unlist(as.list(hgu133aSYMBOL))[ featureNames(exprSet) ]
+exprGene <- combineProbesToGene(exprs(exprSet), mapDat)
 exprs(exprSet) <- exprGene
 
 s <- fs(exprGene)
 ```
 
-We then ran `rma` which consolidates the feature space down to 61,528 probesets. The first SVD was used to collapse multiple probesets to a single expression value per gene (15,531). Singular Value Decomposition (SVD) was performed on the resulting expression matrix to assess its structure.
+We then ran `rma` which consolidates the feature space down to the probeset level. The first SVD was used to collapse multiple probesets to a single expression value per gene (12,704). Singular Value Decomposition (SVD) was performed on the resulting expression matrix to assess its structure.
 
 ```{r svdRaw, echo=FALSE}
 xyplot(s$d ~ 1:length(s$d),
        xaxt="n",
        xlab="eigen gene",
        ylab="% variance explained")
-xyplot(s$v[,2] ~ s$v[,1], groups=factor(pData(exprSet)$Factor.Value.CELL_LINE.),
+xyplot(s$v[,2] ~ s$v[,1], groups=factor(julienClin$Factor.Value.genetic.modification.),
        xlab="1st svd",
        ylab="2nd svd")
 ```
 
-The first two eigen genes quite clearly separate into the three different cell lines HCT116, HT29, and SW480. These two eigen values were regressed out of expression values. SVD plots below show the structure of the expression matrix after removing those effects.
+The first eigen gene quite clearly separates into the mouse / human labels which was then regressed out of the expression matrix. SVD plots below show the structure of the expression matrix after removing those effects.
 
 ```{r adjustData, include=FALSE}
 fit <- lmFit(exprGene, model.matrix(~ s$v[, 1]))
@@ -113,12 +98,12 @@ xyplot(sAdj$d ~ 1:length(sAdj$d),
        xaxt="n",
        xlab="eigen gene",
        ylab="% variance explained")
-xyplot(sAdj$v[,2] ~ sAdj$v[,1], groups=factor(pData(exprSet)$Factor.Value.CELL_LINE.),
+xyplot(sAdj$v[,2] ~ sAdj$v[,1],  groups=factor(julienClin$Factor.Value.genetic.modification.),
        xlab="1st svd",
        ylab="2nd svd")
 ```
 
-After removing the first eigen value, SVD plots look much less worrisome.
+After removing the first eigen value, SVD plots seem much more reasonable.
 
 ```{r saveObject, include=FALSE}
 julienQcedExpressionSet <- exprSet
