@@ -1,0 +1,133 @@
+CHEMORES DESCRIPTION NEEDED HERE. These samples were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all samples.
+
+```{r loadData, include=FALSE}
+#outputFilePath = file.path(tempdir(), "chemoresQcedExpressionSet.rbin")
+#used = c("syn1670672", "syn1670619")
+
+## SCRIPT TO QC AND PROCESS THE CHEMORES DATASET
+#####
+## ANALYST: BRIAN M. BOT
+#####
+
+require(synapseClient)
+require(rGithubClient)
+require(affy)
+require(affyPLM)
+require(limma)
+require(chron)
+require(corpcor)
+require(ggplot2)
+
+## SOURCE IN UTILITY FUNCTIONS
+myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
+                  ref="branch", refName="dev")
+sourceRepoFile(myRepo, "functions/utilityFunctions.R")
+
+## GRAB THE ARCHIVE FILE FROM CHEMORES - UNTAR IN TEMP DIRECTORY
+crEnt <- downloadEntity("syn1670672")
+crDir <- tempfile(pattern="crDir")
+dir.create(crDir)
+untar(file.path(crEnt$cacheDir, crEnt$files), exdir = crDir)
+theseFiles <- list.celfiles(crDir, recursive=T, full.names=T)
+
+## READ IN CEL FILES
+chemoresExpr <- ReadAffy(filenames=theseFiles)
+
+## READ IN THE CLINICAL DATA
+clinEnt <- downloadEntity("syn1670619")
+load(file.path(clinEnt$cacheDir, clinEnt$files))
+chemoresClin <- CHEMORES_CLIN
+
+
+
+
+
+
+
+
+stopifnot(all(sapply(strsplit(sampleNames(chemoresExpr), ".", fixed=T), "[[", 1) == chemoresClin$SN))
+rownames(chemoresClin) <- sampleNames(chemoresExpr)
+pData(chemoresExpr) <- chemoresClin
+chemoresRaw <- chemoresExpr
+
+scanDate <- protocolData(chemoresRaw)$ScanDate
+scanDate <- chron(gsub(" .*", "", scanDate))
+
+## ORDER SAMPLES IN CHRONOLOGICAL ORDER OF SCAN DATE
+chemoresRaw <- chemoresRaw[, order(scanDate)]
+
+## PERFORM SOME PRELIMINARY QC
+pset <- fitPLM(chemoresRaw)
+```
+
+```{r plmPlots, echo=FALSE}
+par(mfrow=c(2,1))
+RLE(pset, main="RLE for CRC322")
+NUSE(pset, main="NUSE for CRC322")
+rm(pset)
+```
+
+Given the high NUSE for samples collected before 01/01/2007, those 15 samples were removed from all further analyses. We then ran `rma` on the resulting 307 samples which consolidates the feature space down to 54,675 probesets. The first Singular Value was used to collapse multiple probesets to a single expression value per gene. Singular Value Decomposition (SVD) was performed on the entire resulting expression matrix to assess its structure.
+
+```{r subset, include=FALSE}
+# REMOVE EARLY SAMPLES; LARGE SE FROM NUSE PLOT
+chemoresRaw <- chemoresRaw[ , scanDate > "01/01/07" ]
+exprSet <- rma(chemoresRaw)
+expr <- exprs(exprSet)
+
+## COMBINE TO ONE PROBE PER GENE
+mapDat <- unlist(as.list(hgu133plus2SYMBOL))[ rownames(expr) ]
+exprGene <- combineProbesToGene(expr, mapDat)
+exprs(exprSet) <- exprGene
+
+## SVD ON EXPRESSION MATRIX -- ASSESS OVERALL STRUCTURE AND POSSIBLE LATENT STRUCTURE
+s <- fs(exprGene)
+```
+
+```{r rawSvd, echo=FALSE}
+qplot(1:length(s$d), s$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(s$v[, 1], s$v[, 2],
+      xlab="1st svd",
+      ylab="2nd svd")
+```
+
+The first SVD appears to explain about 20% of the variation and did not appear strongly associated with any clinical covariates.
+
+```{r normalize, include=FALSE}
+fit <- lmFit(exprSet, model.matrix(~as.numeric(pData(exprSet)$AGE)))
+bfit <- eBayes(fit)
+#hist(bfit$p.value[,2], main="Limma: Effect of age on gene expression", xlab="p-value")
+exprSetAdj <- exprSet
+exprs(exprSetAdj) <- exprs(exprSet) - fitted.values(fit)
+
+## MAKE SURE NO LARGE AMOUNTS OF VARIATION HAVE BEEN ADDED BY PROCESS
+sAdj <- fs(exprs(exprSetAdj))
+```
+
+The gene-specific fitted values of age were removed from the expression matrix (gender information not available). The following plots are SVD plots after age effects were removed to ensure this did not introduce any unwanted effects to the data.
+
+```{r svdAdj, echo=FALSE}
+qplot(1:length(sAdj$d), sAdj$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(sAdj$v[, 1], sAdj$v[, 2], colour=label,
+      xlab="1st svd",
+      ylab="2nd svd")
+```
+
+```{r saveObject, include=FALSE}
+## FINALIZE THE SAMPLES THAT WILL BE KEPT FOR FURTHER ANALYSIS
+## REMOVE UNANNOTATED KRAS
+exprSetAdj <- exprSetAdj[ , pData(exprSetAdj)$KRAS_Mutation != "NaN"]
+kras_status <- pData(exprSetAdj)$KRAS_Mutation
+kras_status[kras_status=="None"] <- "WT"
+kras_status[kras_status=="Yes"] <- "MUT"
+pData(exprSetAdj)$kras_status <- kras_status
+
+chemoresQcedExpressionSet <- exprSetAdj
+save("chemoresQcedExpressionSet", file=file.path(tempdir(), "chemoresQcedExpressionSet.rbin"))
+```
+
+Once this final processing was complete, all patients who did not have KRAS status evaluated were removed from the dataset and will not be used for further analysis. This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.

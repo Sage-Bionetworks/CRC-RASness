@@ -1,0 +1,98 @@
+Expression data from the Agilent G4502A chip (data frozen by the TCGA Pan Cancer Analysis Group) and their corresponding clinical data were consolidated from the Lung Adenocarcinoma cohort from TCGA.
+
+```{r loadData, include=FALSE}
+#outputFilePath = file.path(tempdir(), "tcgaAgilentQcedExpressionSet.rbin")
+#used = c("syn1571448", "syn1571481")
+
+## FUNCTIONS TO EXTRACT DATA OBJECTS FROM SYNAPSE AND QC
+#####
+## ANALYST: BRIAN M. BOT
+#####
+
+require(synapseClient)
+require(rGithubClient)
+require(Biobase)
+require(limma)
+require(corpcor)
+require(ggplot2)
+
+## SOURCE IN THE DATA EXTRACTION FUNCTIONS
+myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
+                  ref="branch", refName="dev")
+sourceRepoFile(myRepo, "functions/utilityFunctions.R")
+
+## CREATE A DIRECTORY FOR PLOTS TO BE UPLOADED TO SYNAPSE
+tcgaAgilentDir <- file.path(tempdir(), "tcgaAgilentQC")
+dir.create(tcgaAgilentDir)
+
+lungAgilent <- loadTCGAFileFromEntity("syn1571448")
+
+thesePatients <- sapply(strsplit(colnames(lungAgilent), "-", fixed=T), function(x){
+  paste(x[1:3], collapse="-")
+})
+theseFeatures <- rownames(lungAgilent)
+
+if( all(duplicated(thesePatients) == FALSE) ){
+  colnames(lungAgilent) <- thesePatients
+} else{
+  stop("duplicated patients")
+}
+
+## CONVERT TO NUMERIC MATRIX
+lungAgilent <- apply(lungAgilent, 2, as.numeric)
+rownames(lungAgilent) <- theseFeatures
+expr <- lungAgilent
+
+## GRAB THE CLINICAL DATA
+clin <- loadTCGAFileFromEntity("syn1571481")
+
+## SUBSET TO COHORT OF INTEREST
+clin <- clin[colnames(expr), ]
+
+## REMOVE GENES WHERE AT LEAST ONE PATIENT HAS A MISSING VALUE
+expr <- expr[ rowSums(is.na(expr)) == 0, ]
+
+## SVD ON EXPRESSION MATRIX -- ASSESS OVERALL STRUCTURE AND POSSIBLE LATENT STRUCTURE
+s <- fs(expr)
+```
+
+Expression values were already consolidated to the gene level, but were assessed for latent structure in the data by exploring the Singular Value Decomposition (SVD). See below:
+
+```{r svdRaw, echo=FALSE}
+qplot(1:length(s$d), s$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(s$v[, 1], s$v[, 2],
+      xlab="1st svd",
+      ylab="2nd svd")
+```
+
+As with all datasets in this analysis, age and gender effects were removed on a gene-by-gene basis when this information was available. The following plots are SVD plots after age and gender effects were removed to ensure this did not introduce any unwanted effects to the data.
+
+```{r adjustExpression, include=FALSE}
+## ADJUST DATA FOR AGE AND GENDER
+fit <- lmFit(expr, model.matrix(~as.numeric(clin$age_at_initial_pathologic_diagnosis) + factor(clin$gender)))
+exprAdj <- residuals(fit, expr)
+
+## PLOTS FOR ADJUSTED EXPRESSION
+sAdj <- fs(exprAdj)
+```
+
+
+```{r svdAdjusted, echo=FALSE}
+qplot(1:length(sAdj$d), sAdj$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(sAdj$v[, 1], sAdj$v[, 2],
+      xlab="1st svd",
+      ylab="2nd svd")
+```
+
+
+```{r saveObject, include=FALSE}
+tcgaAgilentQcedExpressionSet <- ExpressionSet(exprAdj)
+pData(tcgaAgilentQcedExpressionSet) <- clin
+save(tcgaAgilentQcedExpressionSet, file=file.path(tempdir(), "tcgaAgilentQcedExpressionSet.rbin"))
+```
+
+This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.
