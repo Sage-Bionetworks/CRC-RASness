@@ -106,9 +106,9 @@ qplot(sAdj$v[, 1], sAdj$v[, 2], colour=tissue,
 
 
 ```{r saveObject, include=FALSE}
-tcgaRNAseqQcedExpressionSet <- ExpressionSet(exprAdj)
-pData(tcgaRNAseqQcedExpressionSet) <- clin
-save(tcgaRNAseqQcedExpressionSet, file=file.path(tempdir(), "tcgaRNAseqQcedExpressionSet.rbin"))
+tcgaAgilentQcedExpressionSet <- ExpressionSet(exprAdj)
+pData(tcgaAgilentQcedExpressionSet) <- clin
+save(tcgaAgilentQcedExpressionSet, file=file.path(tempdir(), "tcgaAgilentQcedExpressionSet.rbin"))
 ```
 
 This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.
