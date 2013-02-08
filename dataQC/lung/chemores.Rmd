@@ -38,7 +38,8 @@ clinEnt <- downloadEntity("syn1670619")
 load(file.path(clinEnt$cacheDir, clinEnt$files))
 chemoresClin <- CHEMORES_CLIN
 
-
+## GET AGE
+# chemoresClin$Age <- (chemoresClin$Date_Surgery_Exerese - chemoresClin$Date_Birth) / 365 * 12
 
 
 
@@ -96,7 +97,7 @@ qplot(s$v[, 1], s$v[, 2],
 The first SVD appears to explain about 20% of the variation and did not appear strongly associated with any clinical covariates.
 
 ```{r normalize, include=FALSE}
-fit <- lmFit(exprSet, model.matrix(~as.numeric(pData(exprSet)$AGE)))
+fit <- lmFit(exprSet, model.matrix(~as.numeric(pData(exprSet)$AGE) + pData(exprSet)$Gender))
 bfit <- eBayes(fit)
 #hist(bfit$p.value[,2], main="Limma: Effect of age on gene expression", xlab="p-value")
 exprSetAdj <- exprSet
@@ -130,4 +131,3 @@ chemoresQcedExpressionSet <- exprSetAdj
 save("chemoresQcedExpressionSet", file=file.path(tempdir(), "chemoresQcedExpressionSet.rbin"))
 ```
 
-Once this final processing was complete, all patients who did not have KRAS status evaluated were removed from the dataset and will not be used for further analysis. This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.

@@ -1,0 +1,114 @@
+The raw BATTLE gene expression data was accessed through Gene Expression Omnibus (GEO) available through its unique id [GSE33072](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE33072). These data were generated on the Affymetrix Human Gene 1.0 ST Array. These data were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all samples.
+
+```{r loadData, include=FALSE}
+#outputFilePath = file.path(tempdir(), "battleQcedExpressionSet.rbin")
+#used = c("syn1670428", "syn1670430")
+
+## SCRIPT TO QC AND PROCESS THE BATTLE DATASET
+#####
+## ANALYST: BRIAN M. BOT
+#####
+
+require(synapseClient)
+require(rGithubClient)
+require(affy)
+require(affyPLM)
+require(limma)
+require(corpcor)
+require(chron)
+require(ggplot2)
+require(hgu133a2.db)
+
+options(stringsAsFactors=FALSE)
+
+## SOURCE IN THE DATA EXTRACTION FUNCTIONS
+myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
+                  ref="branch", refName="dev")
+sourceRepoFile(myRepo, "functions/utilityFunctions.R")
+
+## READ IN DATA
+celFiles <- downloadEntity("syn1670428")
+
+
+
+
+
+
+
+battleAffy <- ReadAffy(filenames=file.path(celFiles$cacheDir, celFiles$files))
+
+## READ IN CLINICAL DATA
+clinFile <- downloadEntity("syn1670430")
+battleClin <- read.delim(file.path(clinFile$cacheDir, clinFile$files), as.is=T)
+battleClin <- battleClin[ !is.na(battleClin$GEO.ID), ]
+rownames(battleClin) <- paste(battleClin$GEO.ID, ".CEL.gz", sep="")
+battleClin <- battleClin[sampleNames(battleAffy), ]
+
+battleClin$scanDate <- protocolData(battleAffy)$ScanDate
+battleClin$scanDate <- chron(gsub(" .*", "", battleClin$scanDate))
+## FOR MISSING AGE - SET TO MEAN AGE
+battleClin$Age[is.na(battleClin$Age)] <- mean(battleClin$Age, na.rm=T)
+
+## ORDER SAMPLES IN CHRONOLOGICAL ORDER OF SCAN DATE
+pData(battleAffy) <- battleClin
+battleAffy <- battleAffy[, order(battleClin$scanDate)]
+
+## PERFORM SOME PRELIMINARY QC
+pset <- fitPLM(battleAffy)
+```
+
+```{r plmPlots, echo=FALSE}
+par(mfrow=c(2,1))
+RLE(pset, main="RLE for BATTLE")
+NUSE(pset, main="NUSE for BATTLE")
+par(mfrow=c(1,1))
+```
+
+
+```{r}
+battleAffy <- battleAffy[, sampleNames(battleAffy)[-(length(sampleNames(battleAffy))-2)]]
+exprSet <- rma(battleAffy)
+expr <- exprs(exprSet)
+mapDat <- unlist(as.list(hgu133a2SYMBOL))[ rownames(expr) ]
+exprGene <- combineProbesToGene(expr, mapDat)
+exprs(exprSet) <- exprGene
+
+s <- fs(exprGene)
+```
+
+We then ran `rma` on the resulting 79 samples which consolidates the feature space down to 22,277 probesets. The first SVD was used to collapse multiple probesets to a single expression value per gene. Singular Value Decomposition (SVD) was performed on the resulting expression matrix to assess its structure.
+
+```{r svdRaw, echo=FALSE}
+qplot(1:length(s$d), s$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(s$v[, 1], s$v[, 2],
+      xlab="1st svd",
+      ylab="2nd svd")
+```
+
+The first eigen gene explains around 40\% of the variation. There appears to be major latent structure in these data, which cannot be explained any of the variables (particularly tissue) provided by experimentalists. Age and gender effects were subsequently removed. The following plots are SVD plots after age and gender effects were removed to ensure this did not introduce any further effects into the data.
+
+```{r exprAdj, include=FALSE}
+fit <- lmFit(exprSet, model.matrix(~factor(pData(exprSet)$Sex) + as.numeric(pData(exprSet)$Age) ))
+exprSetAdj <- exprSet
+exprs(exprSetAdj) <- exprs(exprSet) - fitted.values(fit)
+
+sAdj <- fs(exprs(exprSetAdj))
+```
+
+```{r svdAdj, echo=FALSE}
+qplot(1:length(sAdj$d), sAdj$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(sAdj$v[, 1], sAdj$v[, 2], colour=label,
+      xlab="1st svd",
+      ylab="2nd svd")
+```
+
+```{r}
+battleQcedExpressionSet <- exprSetAdj
+save("battleQcedExpressionSet", file=file.path(tempdir(), "battleQcedExpressionSet.rbin"))
+```
+
+This resulting R object is an `ExpressionSet` containing expression values on `r nrow(battleQcedExpressionSet)` genes as well as clinical information on `r ncol(battleQcedExpressionSet)` samples within the `phenoData` slot of the object.

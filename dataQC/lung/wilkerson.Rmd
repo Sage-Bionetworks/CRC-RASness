@@ -1,0 +1,108 @@
+The raw Wilkerson gene expression data was accessed through Gene Expression Omnibus (GEO) available through its unique id [GSE26939](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE26939). These data were generated on the Agilent-UNC-custom-4X44K array.
+
+```{r loadData, include=FALSE}
+#outputFilePath = file.path(tempdir(), "wilkersonQcedExpressionSet.rbin")
+#used = c("syn1670420", "syn1670423")
+
+## SCRIPT TO QC AND PROCESS THE WILKERSON DATASET
+#####
+## ANALYST: BRIAN M. BOT
+#####
+
+require(synapseClient)
+require(rGithubClient)
+require(affy)
+require(affyPLM)
+require(limma)
+require(corpcor)
+require(chron)
+require(ggplot2)
+require(hgu133a2.db)
+
+options(stringsAsFactors=FALSE)
+
+## SOURCE IN THE DATA EXTRACTION FUNCTIONS
+myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
+                  ref="branch", refName="dev")
+sourceRepoFile(myRepo, "functions/utilityFunctions.R")
+
+## READ IN DATA FROM GEO (POINTED TO FROM SYNAPSE COMMONS REPOSITORY)
+rawFiles <- downloadEntity("syn1670420")
+
+## READ IN CLINICAL DATA IN SYNAPSE WHICH WAS DOWNLOADED FROM JCO PUB
+clinFile <- downloadEntity("syn1670423")
+
+
+
+
+
+
+
+
+wilkersonClin <- read.delim(file.path(clinFile$cacheDir, clinFile$files), as.is=T)
+wilkersonClin <- wilkersonClin[ !is.na(wilkersonClin$GEO.ID), ]
+rownames(wilkersonClin) <- paste(wilkersonClin$GEO.ID, ".CEL.gz", sep="")
+wilkersonClin <- wilkersonClin[sampleNames(wilkersonAffy), ]
+
+wilkersonClin$scanDate <- protocolData(wilkersonAffy)$ScanDate
+wilkersonClin$scanDate <- chron(gsub(" .*", "", wilkersonClin$scanDate))
+## FOR MISSING AGE - SET TO MEAN AGE
+wilkersonClin$Age[is.na(wilkersonClin$Age)] <- mean(wilkersonClin$Age, na.rm=T)
+
+## ORDER SAMPLES IN CHRONOLOGICAL ORDER OF SCAN DATE
+pData(wilkersonAffy) <- wilkersonClin
+wilkersonAffy <- wilkersonAffy[, order(wilkersonClin$scanDate)]
+
+## PERFORM SOME PRELIMINARY QC
+pset <- fitPLM(wilkersonAffy)
+```
+
+
+
+```{r}
+wilkersonAffy <- wilkersonAffy[, sampleNames(wilkersonAffy)[-(length(sampleNames(wilkersonAffy))-2)]]
+exprSet <- rma(wilkersonAffy)
+expr <- exprs(exprSet)
+mapDat <- unlist(as.list(hgu133a2SYMBOL))[ rownames(expr) ]
+exprGene <- combineProbesToGene(expr, mapDat)
+exprs(exprSet) <- exprGene
+
+s <- fs(exprGene)
+```
+
+Data were initially processed using `rma`. The first SVD was used to collapse multiple probesets to a single expression value per gene. Singular Value Decomposition (SVD) was performed on the resulting expression matrix to assess its structure.
+
+```{r svdRaw, echo=FALSE}
+qplot(1:length(s$d), s$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(s$v[, 1], s$v[, 2],
+      xlab="1st svd",
+      ylab="2nd svd")
+```
+
+Age and gender effects were subsequently removed. The following plots are SVD plots after age and gender effects were removed to ensure this did not introduce any further effects into the data.
+
+```{r exprAdj, include=FALSE}
+fit <- lmFit(exprSet, model.matrix(~factor(pData(exprSet)$Sex) + as.numeric(pData(exprSet)$Age) ))
+exprSetAdj <- exprSet
+exprs(exprSetAdj) <- exprs(exprSet) - fitted.values(fit)
+
+sAdj <- fs(exprs(exprSetAdj))
+```
+
+```{r svdAdj, echo=FALSE}
+qplot(1:length(sAdj$d), sAdj$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(sAdj$v[, 1], sAdj$v[, 2], colour=label,
+      xlab="1st svd",
+      ylab="2nd svd")
+```
+
+```{r}
+wilkersonQcedExpressionSet <- exprSetAdj
+save("wilkersonQcedExpressionSet", file=file.path(tempdir(), "wilkersonQcedExpressionSet.rbin"))
+```
+
+This resulting R object is an `ExpressionSet` containing expression values on `r nrow(wilkersonQcedExpressionSet)` genes as well as clinical information on `r ncol(wilkersonQcedExpressionSet)` samples within the `phenoData` slot of the object.
