@@ -1,7 +1,7 @@
 The raw gene expression data for the MEK inhibition in mouse xenografts was accessed through Array Express through its unique id [E-MEXP-3557](http://www.ebi.ac.uk/arrayexpress/experiments/E-MEXP-3557). These data were generated on a custom Affymetrix array. These data were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all samples.
 
 ```{r loadData, include=FALSE}
-#outputFilePath = file.path(tempdir(), "mekInhibitionQcedExpressionSet.rbin")
+#outputFilePath = file.path(tempdir(), "mekInhibitionMouseXenoQcedExpressionSet.rbin")
 #used = c("syn372544", "syn1669720", "syn1669726", "syn1669722")
 
 ## SCRIPT TO QC AND PROCESS THE EXPRESSION DATA FROM E-MEXP-3557
@@ -118,8 +118,8 @@ qplot(sAdj$v[, 1], sAdj$v[, 2], colour=cell_line,
 After removing the first eigen value, SVD plots look much less worrisome.
 
 ```{r saveObject, include=FALSE}
-mekInhibitionQcedExpressionSet <- exprSet
-save("mekInhibitionQcedExpressionSet", file=file.path(tempdir(), "mekInhibitionQcedExpressionSet.rbin"))
+mekInhibitionMouseXenoQcedExpressionSet <- exprSet
+save("mekInhibitionMouseXenoQcedExpressionSet", file=file.path(tempdir(), "mekInhibitionMouseXenoQcedExpressionSet.rbin"))
 ```
 
-This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.
+This resulting R object is an `ExpressionSet` containing expression values on `r nrow(mekInhibitionMouseXenoQcedExpressionSet)` genes as well as clinical information on `r ncol(mekInhibitionMouseXenoQcedExpressionSet)` samples within the `phenoData` slot of the object.

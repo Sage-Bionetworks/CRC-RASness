@@ -109,4 +109,4 @@ julienQcedExpressionSet <- exprSet
 save("julienQcedExpressionSet", file=file.path(tempdir(), "julienQcedExpressionSet.rbin"))
 ```
 
-This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.
+This resulting R object is an `ExpressionSet` containing expression values on `r nrow(julienQcedExpressionSet)` genes as well as clinical information on `r ncol(julienQcedExpressionSet)` samples within the `phenoData` slot of the object.

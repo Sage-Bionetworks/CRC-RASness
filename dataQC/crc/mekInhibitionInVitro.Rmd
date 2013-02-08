@@ -1,7 +1,7 @@
 The raw gene expression data for the *in vitro* cell line  was accessed through Gene Expression Omnibus (GEO) available through its unique id [GSE18232](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE18232). There were 18 samples, six each of HCT116, HT29, and SW480 colorectal cell lines. These data were generated on the Affymetrix Human Genome U133A 2.0 Array. These data were QCed initially using the `affyPLM` package. The following plot shows the Relative Log Expression (RLE) and Normalized Unscaled Standard Errors (NUSE) plots for all samples.
 
 ```{r loadData, include=FALSE}
-#outputFilePath = file.path(tempdir(), "invitroQcedExpressionSet.rbin")
+#outputFilePath = file.path(tempdir(), "mekInhibitionInvitroQcedExpressionSet.rbin")
 #used = c("syn235812", "syn338402")
 
 ## SCRIPT TO QC AND PROCESS THE EXPRESSION DATA FROM CRC CELL LINES (IN VITRO)
@@ -107,8 +107,8 @@ qplot(sAdj$v[, 1], sAdj$v[, 2], colour=cell_line,
 After removing the first two eigen values, SVD plots look much less worrisome.
 
 ```{r saveObject, include=FALSE}
-invitroQcedExpressionSet <- exprSet
-save("invitroQcedExpressionSet", file=file.path(tempdir(), "invitroQcedExpressionSet.rbin"))
+mekInhibitionInvitroQcedExpressionSet <- exprSet
+save("mekInhibitionInvitroQcedExpressionSet", file=file.path(tempdir(), "mekInhibitionInvitroQcedExpressionSet.rbin"))
 ```
 
-This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.
+This resulting R object is an `ExpressionSet` containing expression values on `r nrow(mekInhibitionInvitroQcedExpressionSet)` genes as well as clinical information on `r ncol(mekInhibitionInvitroQcedExpressionSet)` samples within the `phenoData` slot of the object.

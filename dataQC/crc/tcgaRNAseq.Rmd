@@ -120,4 +120,4 @@ pData(tcgaRNAseqQcedExpressionSet) <- clin
 save(tcgaRNAseqQcedExpressionSet, file=file.path(tempdir(), "tcgaRNAseqQcedExpressionSet.rbin"))
 ```
 
-This resulting R object is an `ExpressionSet` containing gene-level expression values as well as clinical information on all samples within the `phenoData` slot of the object.
+This resulting R object is an `ExpressionSet` containing expression values on `r nrow(tcgaRNAseqQcedExpressionSet)` genes as well as clinical information on `r ncol(tcgaRNAseqQcedExpressionSet)` samples within the `phenoData` slot of the object.
