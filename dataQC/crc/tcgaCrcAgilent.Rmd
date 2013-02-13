@@ -1,7 +1,7 @@
 Expression data from the Agilent G4502A chip (data frozen by the TCGA Pan Cancer Analysis Group) and their corresponding clinical data were consolidated across the Colon Adenocarcinoma (COAD) and Rectum Adenocarcinoma (READ) cohorts from TCGA.
 
 ```{r loadData, include=FALSE}
-#outputFilePath = file.path(tempdir(), "tcgaAgilentQcedExpressionSet.rbin")
+#outputFilePath = file.path(tempdir(), "tcgaCrcAgilentQcedExpressionSet.rbin")
 #used = c("syn417828", "syn418082", "syn1446080", "syn1446153")
 
 ## FUNCTIONS TO EXTRACT DATA OBJECTS FROM SYNAPSE AND QC
@@ -106,9 +106,9 @@ qplot(sAdj$v[, 1], sAdj$v[, 2], colour=tissue,
 
 
 ```{r saveObject, include=FALSE}
-tcgaAgilentQcedExpressionSet <- ExpressionSet(exprAdj)
-pData(tcgaAgilentQcedExpressionSet) <- clin
-save(tcgaAgilentQcedExpressionSet, file=file.path(tempdir(), "tcgaAgilentQcedExpressionSet.rbin"))
+tcgaCrcAgilentQcedExpressionSet <- ExpressionSet(exprAdj)
+pData(tcgaCrcAgilentQcedExpressionSet) <- clin
+save(tcgaCrcAgilentQcedExpressionSet, file=file.path(tempdir(), "tcgaCrcAgilentQcedExpressionSet.rbin"))
 ```
 
-This resulting R object is an `ExpressionSet` containing expression values on `r nrow(tcgaAgilentQcedExpressionSet)` genes as well as clinical information on `r ncol(tcgaAgilentQcedExpressionSet)` samples within the `phenoData` slot of the object.
+This resulting R object is an `ExpressionSet` containing expression values on `r nrow(tcgaCrcAgilentQcedExpressionSet)` genes as well as clinical information on `r ncol(tcgaCrcAgilentQcedExpressionSet)` samples within the `phenoData` slot of the object.

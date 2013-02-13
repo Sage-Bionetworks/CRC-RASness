@@ -27,15 +27,20 @@ myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
 sourceRepoFile(myRepo, "functions/utilityFunctions.R")
 
 ## READ IN DATA
-celFiles <- downloadEntity("syn1670428")
+battleEnt <- downloadEntity("syn1670428")
+battleDir <- tempfile(pattern="battleDir")
+dir.create(battleDir)
+untar(file.path(battleEnt$cacheDir, battleEnt$files), exdir = battleDir)
+theseFiles <- list.celfiles(battleDir, recursive=T, full.names=T)
+
+## READ IN CEL FILES
+battleAffy <- ReadAffy(filenames=theseFiles)
 
 
 
 
 
 
-
-battleAffy <- ReadAffy(filenames=file.path(celFiles$cacheDir, celFiles$files))
 
 ## READ IN CLINICAL DATA
 clinFile <- downloadEntity("syn1670430")

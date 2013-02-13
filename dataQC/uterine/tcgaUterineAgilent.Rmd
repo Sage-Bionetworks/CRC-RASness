@@ -1,0 +1,94 @@
+Expression data from the Agilent G4502A chip (data frozen by the TCGA Pan Cancer Analysis Group) and their corresponding clinical data were consolidated from the Uterine Corpus Endometrioid Carcinoma (UCEC) cohort from TCGA.
+
+```{r loadData, include=FALSE}
+#outputFilePath = file.path(tempdir(), "tcgaUterineAgilentQcedExpressionSet.rbin")
+#used = c("syn1446169", "syn418104")
+
+## FUNCTIONS TO EXTRACT DATA OBJECTS FROM SYNAPSE AND QC
+#####
+## ANALYST: BRIAN M. BOT
+#####
+
+require(synapseClient)
+require(rGithubClient)
+require(Biobase)
+require(limma)
+require(corpcor)
+require(ggplot2)
+
+## SOURCE IN THE DATA EXTRACTION FUNCTIONS
+myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
+                  ref="branch", refName="dev")
+sourceRepoFile(myRepo, "functions/utilityFunctions.R")
+
+uterineAgilent <- loadTCGAFileFromEntity("syn418104")
+
+thesePatients <- sapply(strsplit(colnames(uterineAgilent), "-", fixed=T), function(x){
+  paste(x[1:3], collapse="-")
+})
+theseFeatures <- rownames(uterineAgilent)
+
+if( all(duplicated(thesePatients) == FALSE) ){
+  colnames(uterineAgilent) <- thesePatients
+} else{
+  stop("duplicated patients")
+}
+
+## CONVERT TO NUMERIC MATRIX
+uterineAgilent <- apply(uterineAgilent, 2, as.numeric)
+rownames(uterineAgilent) <- theseFeatures
+expr <- uterineAgilent
+
+## GRAB THE CLINICAL DATA
+clin <- loadTCGAFileFromEntity("syn1446169")
+
+## SUBSET TO COHORT OF INTEREST
+clin <- clin[colnames(expr), ]
+
+## REMOVE GENES WHERE AT LEAST ONE PATIENT HAS A MISSING VALUE
+expr <- expr[ rowSums(is.na(expr)) == 0, ]
+
+## SVD ON EXPRESSION MATRIX -- ASSESS OVERALL STRUCTURE AND POSSIBLE LATENT STRUCTURE
+s <- fs(expr)
+```
+
+Expression values were already consolidated to the gene level, but were assessed for latent structure in the data by exploring the Singular Value Decomposition (SVD). See below:
+
+```{r svdRaw, echo=FALSE}
+qplot(1:length(s$d), s$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(s$v[, 1], s$v[, 2],
+      xlab="1st svd",
+      ylab="2nd svd")
+```
+
+Effect of age was removed on a gene-by-gene basis (all patients were female, so no gender adjustment done). The following plots are SVD plots after age was removed to ensure this did not introduce any unwanted effects to the data.
+
+```{r adjustExpression, include=FALSE}
+## ADJUST DATA FOR AGE AND GENDER
+fit <- lmFit(expr, model.matrix(~ as.numeric(clin$age_at_initial_pathologic_diagnosis) ))
+exprAdj <- residuals(fit, expr)
+
+## PLOTS FOR ADJUSTED EXPRESSION
+sAdj <- fs(exprAdj)
+```
+
+
+```{r svdAdjusted, echo=FALSE}
+qplot(1:length(sAdj$d), sAdj$d,
+      xlab="eigen gene",
+      ylab="% variance explained")
+qplot(sAdj$v[, 1], sAdj$v[, 2],
+      xlab="1st svd",
+      ylab="2nd svd")
+```
+
+
+```{r saveObject, include=FALSE}
+tcgaUterineAgilentQcedExpressionSet <- ExpressionSet(exprAdj)
+pData(tcgaUterineAgilentQcedExpressionSet) <- clin
+save(tcgaUterineAgilentQcedExpressionSet, file=file.path(tempdir(), "tcgaUterineAgilentQcedExpressionSet.rbin"))
+```
+
+This resulting R object is an `ExpressionSet` containing expression values on `r nrow(tcgaUterineAgilentQcedExpressionSet)` genes as well as clinical information on `r ncol(tcgaUterineAgilentQcedExpressionSet)` samples within the `phenoData` slot of the object.

@@ -1,7 +1,7 @@
 Expression data from the Illumina Hi-seq machines (RNAseqV2 data frozen by the TCGA Pan Cancer Analysis Group) and their corresponding clinical data were consolidated across the Colon Adenocarcinoma (COAD) and Rectum Adenocarcinoma (READ) cohorts from TCGA. Only genes that had at least one sample with at least one count was included in QC processing. Values were transformed by adding one and taking the log base 2 (`log2(expr+1)`).
 
 ```{r loadData, include=FALSE}
-#outputFilePath = file.path(tempdir(), "tcgaRNAseqQcedExpressionSet.rbin")
+#outputFilePath = file.path(tempdir(), "tcgaCrcRNAseqQcedExpressionSet.rbin")
 #used = c("syn1446197", "syn1446276", "syn1446080", "syn1446153")
 
 ## FUNCTIONS TO EXTRACT DATA OBJECTS FROM SYNAPSE AND QC
@@ -115,9 +115,9 @@ qplot(sAdj$v[, 1], sAdj$v[, 2], colour=tissue,
 
 
 ```{r saveObject, include=FALSE}
-tcgaRNAseqQcedExpressionSet <- ExpressionSet(exprAdj)
-pData(tcgaRNAseqQcedExpressionSet) <- clin
-save(tcgaRNAseqQcedExpressionSet, file=file.path(tempdir(), "tcgaRNAseqQcedExpressionSet.rbin"))
+tcgaCrcRNAseqQcedExpressionSet <- ExpressionSet(exprAdj)
+pData(tcgaCrcRNAseqQcedExpressionSet) <- clin
+save(tcgaCrcRNAseqQcedExpressionSet, file=file.path(tempdir(), "tcgaCrcRNAseqQcedExpressionSet.rbin"))
 ```
 
-This resulting R object is an `ExpressionSet` containing expression values on `r nrow(tcgaRNAseqQcedExpressionSet)` genes as well as clinical information on `r ncol(tcgaRNAseqQcedExpressionSet)` samples within the `phenoData` slot of the object.
+This resulting R object is an `ExpressionSet` containing expression values on `r nrow(tcgaCrcRNAseqQcedExpressionSet)` genes as well as clinical information on `r ncol(tcgaCrcRNAseqQcedExpressionSet)` samples within the `phenoData` slot of the object.
