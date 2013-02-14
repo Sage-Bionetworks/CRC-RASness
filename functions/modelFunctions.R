@@ -7,7 +7,12 @@
 #####
 
 
-## PREDICTION USING ELASTIC NET -- TRAINING AND TEST
+## PREDICTION USING ELASTIC NET -- TRAINING AND TEST ExpressionSets PASSED
+#####
+## FIRST DETERMINES OVERLAP IN FEATURE SETS SO MODELS
+## FIT ON THE SAME TRAINING SET BUT WITH DIFFERENT
+## TESTING SETS MAY PRODUCE DIFFERENT MODELS
+#####
 binomialPredictEN <- function(trainEset, trainResponse, testEsets, alpha=.1, seed=2012, quantileNormalize=F){
   require(glmnet)
   require(caret)
@@ -26,7 +31,6 @@ binomialPredictEN <- function(trainEset, trainResponse, testEsets, alpha=.1, see
     eset <- testEsets[[i]]
     idxs <- match(commonFeatures, featureNames(eset))
     testEsets[[i]] <- eset[na.omit(idxs),]
-    
   }
   
   if(quantileNormalize){
@@ -50,16 +54,16 @@ binomialPredictEN <- function(trainEset, trainResponse, testEsets, alpha=.1, see
   fitM <- glmnet(t(exprs(trainEset)),
                  factor(trainResponse),
                  alpha=alpha, 
-                 lambda=cv.fit$lambda.1se, 
+                 lambda=cvFit$lambda.1se, 
                  family="binomial")
   
   # predict on validation esets
   yhats <- lapply(testEsets, function(eset){
     testX <- normalizeToX(rowMeans(exprs(trainEset)), 
-                            apply(exprs(trainEset),1,sd), 
-                            exprs(eset))
+                          apply(exprs(trainEset), 1, sd), 
+                          exprs(eset))
     
-    yHat <- predict(fit.m, t(testX),type="response")
+    yHat <- predict(fitM, t(testX),type="response")
     yHat
   })
   
