@@ -8,27 +8,28 @@
 
 
 ## PREDICTION USING ELASTIC NET -- TRAINING AND TEST
-binomial_predict_EN <- function(trainEset, trainResponse, testEsets, alpha=.1, seed=2012, quantile.normalize=F){
+binomialPredictEN <- function(trainEset, trainResponse, testEsets, alpha=.1, seed=2012, quantileNormalize=F){
   require(glmnet)
+  require(caret)
   require(Biobase)
   
   # find common set of features across train and validation data
-  common_features <- featureNames(trainEset)
+  commonFeatures <- featureNames(trainEset)
   for(eset in testEsets){
-    common_features <- intersect(common_features, featureNames(eset))
+    commonFeatures <- intersect(commonFeatures, featureNames(eset))
   }
-  common_features <- sort(common_features)
+  commonFeatures <- sort(commonFeatures)
   
-  idxs <- match(common_features, featureNames(trainEset))
+  idxs <- match(commonFeatures, featureNames(trainEset))
   trainEset <- trainEset[na.omit(idxs),]
   for(i in seq_along(testEsets)){
     eset <- testEsets[[i]]
-    idxs <- match(common_features, featureNames(eset))
+    idxs <- match(commonFeatures, featureNames(eset))
     testEsets[[i]] <- eset[na.omit(idxs),]
     
   }
   
-  if(quantile.normalize){
+  if(quantileNormalize){
     cat("quantile normalizing...\n")
     ref <- exprs(trainEset)
     for(i in 1:length(testEsets)){
@@ -41,66 +42,67 @@ binomial_predict_EN <- function(trainEset, trainResponse, testEsets, alpha=.1, s
   
   # train EN model
   set.seed(seed)
-  cv.fit <- cv.glmnet(t(exprs(trainEset)),
-                      factor(trainResponse),
-                      nfolds=5,
-                      alpha=alpha,
-                      family="binomial")
-  fit.m <- glmnet(t(exprs(trainEset)),
-                  factor(trainResponse),
-                  alpha=alpha, 
-                  lambda=cv.fit$lambda.1se, 
-                  family="binomial")
+  cvFit <- cv.glmnet(t(exprs(trainEset)),
+                     factor(trainResponse),
+                     nfolds=5,
+                     alpha=alpha,
+                     family="binomial")
+  fitM <- glmnet(t(exprs(trainEset)),
+                 factor(trainResponse),
+                 alpha=alpha, 
+                 lambda=cv.fit$lambda.1se, 
+                 family="binomial")
   
   # predict on validation esets
   yhats <- lapply(testEsets, function(eset){
-    testX <- normalize_to_X(rowMeans(exprs(trainEset)), 
+    testX <- normalizeToX(rowMeans(exprs(trainEset)), 
                             apply(exprs(trainEset),1,sd), 
                             exprs(eset))
     
-    y_hat <- predict(fit.m, t(testX),type="response")
-    y_hat
+    yHat <- predict(fit.m, t(testX),type="response")
+    yHat
   })
   
-  list(yhats=yhats,model=fit.m,featureVec=featureNames(trainEset))
+  list(yhats=yhats,
+       model=fitM,
+       featureVec=featureNames(trainEset))
 }
 
 
 ## KHAMBATA-FORD SIGNATURE
-khambata_enrichment_method <- function(eset){
+khambataEnrichmentMethod <- function(eset){
   require(Biobase)
   
-  pos_idxs <- featureNames(eset) %in% c("AREG","EREG","DUSP6")
-  neg_idxs <- featureNames(eset) %in% c("SLC26A3")
+  posIdxs <- featureNames(eset) %in% c("AREG","EREG","DUSP6")
+  negIdxs <- featureNames(eset) %in% c("SLC26A3")
   E <- apply(exprs(eset), 2, function(x){
-    v <- mean(x[pos_idxs]) - mean(x[neg_idxs])
+    v <- mean(x[posIdxs]) - mean(x[negIdxs])
     v
   })
   E
 }
 
 ## LOBODA SIGNATURE
-loboda_enrichment_method <- function(eset){
+lobodaEnrichmentMethod <- function(eset){
   require(synapseClient)
   require(Biobase)
   
   sigsEnt <- downloadEntity("syn1680777")
   sigs <- load.gmt.data(file.path(sigsEnt$cacheDir, sigsEnt$file))
-  positive_geneset <- sigs[["loboda_ras_up"]]
-  negative_geneset <- sigs[["loboda_ras_down"]]
+  positiveGeneset <- sigs[["loboda_ras_up"]]
+  negativeGeneset <- sigs[["loboda_ras_down"]]
   
-  pos_idxs <- which(featureNames(eset) %in% positive_geneset)
-  neg_idxs <- which(featureNames(eset) %in% negative_geneset)	
+  posIdxs <- which(featureNames(eset) %in% positiveGeneset)
+  negIdxs <- which(featureNames(eset) %in% negativeGeneset)	
   E <- apply(exprs(eset), 2, function(x){
-    v <- mean(x[pos_idxs]) - mean(x[neg_idxs])
+    v <- mean(x[pos_idxs]) - mean(x[negIdxs])
     v
   })
   E
 }
 
 ## GO ENRICHMENT SCORES
-GOenrichment <- function(geneSet, backgroundGenes,minSz=10,maxSz=300){
-  
+GOenrichment <- function(geneSet, backgroundGenes, minSz=10, maxSz=300){
   require(org.Hs.eg.db)
   require(GO.db)
   
