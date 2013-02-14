@@ -4,15 +4,29 @@
 ## SUPPORTING ANALYST: BRIAN BOT
 #####
 
-# create indices for merging across multiple data sets
-mergeAcross <- function(...){
-  tmp <- list(...)
-  xIds <- tmp[[1]]
-  for(i in 2:length(tmp)){
-    xIds <- intersect(xIds, tmp[[i]])
+## COMBINE PROBES TO GENES BY FIRST SV
+combineProbesToGene <- function(expr, genes, method="svd"){
+  
+  if(is.list(genes)) genes <- unlist(genes)
+  
+  stopifnot(dim(expr)[1] ==  length(genes))
+  ugenes <- unique(genes)
+  ugenes <- sort(ugenes[!is.na(ugenes)])
+  M <- matrix(NaN, ncol=dim(expr)[2], nrow=length(ugenes),
+              dimnames=list(ugenes, colnames(expr)))
+  
+  for(gene in ugenes){
+    subExpr <- as.matrix(expr[which(genes == gene),])
+    if(dim(subExpr)[2] == 1){
+      M[gene, ] <- subExpr
+    }else{
+      tmp <- svd(subExpr - rowMeans(subExpr))$v[,1]
+      tmpC <- mean(cor(tmp, t(subExpr)))
+      multiplier <- ifelse(tmpC < 0, -1, 1)
+      M[gene,] <- tmp * multiplier
+    }
   }
-  these <- sapply(1:length(tmp), function(i){ match(xIds, tmp[[i]]) })
-  return(these)
+  return(M)
 }
 
 ## CONVENIENCE FUNCTION FOR SVD EVALUATIONS
@@ -36,12 +50,12 @@ loadTCGAFileFromEntity <- function(synId){
   return(df)
 }
 
+
 buildTopTableFromCorrelationMatrix <- function(C, idxs, top=20){
 	lblsCol <- colnames(C)
 	lblsRow <- rownames(C)
 	nRow <- nrow(C)
 	nCol <- ncol(C)
-	
 	
 	c <- floor(idxs[1:top] / nRow)
 	r <- idxs[1:top] %% nRow
@@ -49,6 +63,7 @@ buildTopTableFromCorrelationMatrix <- function(C, idxs, top=20){
 	return(tbl)
 }
 
+## LOAD GMT-TYPE DATA
 loadGmtData <- function(gmtFilePath){
 	tmp <- readLines(gmtFilePath)
 	gsets <- list()
@@ -62,6 +77,7 @@ loadGmtData <- function(gmtFilePath){
 	return(gsets)
 }
 
+## EXTRACT TCGA PATIENT IDS FROM LONGER TCGA IDS
 extractTcgaPatientIds <- function(tcgaIds){
 	
 	fixIds <- function(tcgaIds){
@@ -75,7 +91,18 @@ extractTcgaPatientIds <- function(tcgaIds){
 	return(patientIds)
 }
 
+## CREATE INDICES FOR MERGING ACROSS MULTIPLE DATA SETS
+mergeAcross <- function(...){
+  tmp <- list(...)
+  xIds <- tmp[[1]]
+  for(i in 2:length(tmp)){
+    xIds <- intersect(xIds, tmp[[i]])
+  }
+  these <- sapply(1:length(tmp), function(i){ match(xIds, tmp[[i]]) })
+  return(these)
+}
 
+## NORMALIZE A MATRIX Y TO ANOTHER X
 normalizeToX <- function(meanX, sdX, Y){
 	mY <- rowMeans(Y)
 	sdY <- apply(Y, 1, sd)
@@ -84,6 +111,7 @@ normalizeToX <- function(meanX, sdX, Y){
 	return(adjY)
 }
 
+## PLOTTING FOR GENOMIC FEATURES -- CHANGE IN FUTURE?
 displayGenomicFeatures <- function(featureList, colorSchemes=NULL, maxSampleWidth=100){
 	
 	if(is.null(colorSchemes)){
@@ -134,6 +162,7 @@ displayGenomicFeatures <- function(featureList, colorSchemes=NULL, maxSampleWidt
 	}
 }
 
+## GO ENRICHMENT SCORES
 GOenrichment <- function(geneSet, backgroundGenes,minSz=10,maxSz=300){
 	
 	require(org.Hs.eg.db)
@@ -171,30 +200,5 @@ GOenrichment <- function(geneSet, backgroundGenes,minSz=10,maxSz=300){
 	out <- out[order(as.numeric(out[,4])),]
 	
 	return(out)
-}
-
-
-combineProbesToGene <- function(expr, genes, method="svd"){
-	
-	if(is.list(genes)) genes <- unlist(genes)
-	
-	stopifnot(dim(expr)[1] ==  length(genes))
-	ugenes <- unique(genes)
-	ugenes <- sort(ugenes[!is.na(ugenes)])
-	M <- matrix(NaN, ncol=dim(expr)[2], nrow=length(ugenes),
-			dimnames=list(ugenes, colnames(expr)))
-	
-	for(gene in ugenes){
-		subExpr <- as.matrix(expr[which(genes == gene),])
-		if(dim(subExpr)[2] == 1){
-			M[gene, ] <- subExpr
-		}else{
-			tmp <- svd(subExpr - rowMeans(subExpr))$v[,1]
-			tmpC <- mean(cor(tmp, t(subExpr)))
-			multiplier <- ifelse(tmpC < 0, -1, 1)
-			M[gene,] <- tmp * multiplier
-		}
-	}
-	return(M)
 }
 
