@@ -35,9 +35,7 @@ if( all(rownames(coadRNAseq) == rownames(readRNAseq)) ){
   stop("rownames do not match")
 }
 
-thesePatients <- sapply(strsplit(colnames(crcRNAseq), "-", fixed=T), function(x){
-  paste(x[1:3], collapse="-")
-})
+thesePatients <- extractTcgaPatientIds(colnames(crcRNAseq))
 
 if( all(duplicated(thesePatients) == FALSE) ){
   colnames(crcRNAseq) <- thesePatients

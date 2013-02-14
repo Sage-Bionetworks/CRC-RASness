@@ -80,14 +80,10 @@ loadGmtData <- function(gmtFilePath){
 ## EXTRACT TCGA PATIENT IDS FROM LONGER TCGA IDS
 extractTcgaPatientIds <- function(tcgaIds){
 	
-	fixIds <- function(tcgaIds){
-		return (gsub("\\.","-", as.matrix(tcgaIds)))
-	}
-	
-	parts <- strsplit(fixIds(tcgaIds),"-",fixed=TRUE)
-	patientIds <- sapply(parts,
-			function(x){ paste(x[1],x[2],x[3],sep="-") },
-			simplify=TRUE)
+	fixIds <- gsub("\\.","-", as.matrix(tcgaIds))
+	patientIds <- sapply(strsplit(fixIds, "-", fixed=T), function(x){
+	  paste(x[1:3], collapse="-")
+	})
 	return(patientIds)
 }
 
@@ -162,43 +158,4 @@ displayGenomicFeatures <- function(featureList, colorSchemes=NULL, maxSampleWidt
 	}
 }
 
-## GO ENRICHMENT SCORES
-GOenrichment <- function(geneSet, backgroundGenes,minSz=10,maxSz=300){
-	
-	require(org.Hs.eg.db)
-	require(GO.db)
-	
-	geneSetEg <- na.omit(unique(mget(geneSet, org.Hs.egSYMBOL2EG, ifnotfound=NA)))
-	backgroundEg <- na.omit(unique(mget(backgroundGenes, org.Hs.egSYMBOL2EG, ifnotfound=NA)))
-	
-	gokeys <- keys(org.Hs.egGO2EG)
-	GOMap <- as.list(org.Hs.egGO2EG)
-	sizes <- lapply(gokeys, function(x){ length(GOMap[[x]])})
-	
-	gokeys <- gokeys[ (sizes >= minSz) & (sizes <= maxSz) ]
-	ni <- length(gokeys)
-	terms <- Term(GOTERM)
-	out <- data.frame(Overlap=rep(-1, ni), TermSize=rep(-1, ni), Expected=rep(-1.0, ni), PvalueUpper=rep(-1.0, ni), PvalueLower=rep(-1.0, ni), Term=NA, stringsAsFactors=FALSE)
-	rownames(out) <- gokeys[1:ni]
-	for( i in 1:ni ){
-		if( i%%1000 == 1 ) print(paste(i, "/", ni))
-		gm <- GOMap[[gokeys[i]]]
-		
-		gm <- intersect(gm, backgroundEg)
-		overlap <- intersect(gm, geneSetEg)
-		p1 <- phyper(as.numeric(length(overlap)-1), as.numeric(length(gm)), as.numeric(length(backgroundEg)-length(gm)), as.numeric(length(geneSetEg)), lower.tail=FALSE)
-		p2 <- phyper(as.numeric(length(overlap)), as.numeric(length(gm)), as.numeric(length(backgroundEg)-length(gm)), as.numeric(length(geneSetEg)), lower.tail=TRUE)
-		
-		out[i, 1] <- length(overlap)
-		out[i, 2] <- length(gm)
-		out[i, 3] <- as.numeric(length(geneSetEg)) / length(backgroundEg) * length(gm)
-		out[i, 4] <- p1
-		out[i, 5] <- p2
-		out[i, 6] <- terms[[gokeys[i]]]
-	}
-	
-	out <- out[order(as.numeric(out[,4])),]
-	
-	return(out)
-}
 

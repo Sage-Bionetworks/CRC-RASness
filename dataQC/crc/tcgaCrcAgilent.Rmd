@@ -35,9 +35,7 @@ if( all(rownames(coadAgilent) == rownames(readAgilent)) ){
   stop("rownames do not match")
 }
 
-thesePatients <- sapply(strsplit(colnames(crcAgilent), "-", fixed=T), function(x){
-  paste(x[1:3], collapse="-")
-})
+thesePatients <- extractTcgaPatientIds(colnames(crcAgilent))
 
 if( all(duplicated(thesePatients) == FALSE) ){
   colnames(crcAgilent) <- thesePatients

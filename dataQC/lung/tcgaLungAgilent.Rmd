@@ -27,9 +27,7 @@ dir.create(tcgaAgilentDir)
 
 lungAgilent <- loadTCGAFileFromEntity("syn1571448")
 
-thesePatients <- sapply(strsplit(colnames(lungAgilent), "-", fixed=T), function(x){
-  paste(x[1:3], collapse="-")
-})
+thesePatients <- extractTcgaPatientIds(colnames(lungAgilent))
 theseFeatures <- rownames(lungAgilent)
 
 if( all(duplicated(thesePatients) == FALSE) ){
