@@ -2,7 +2,7 @@ CHEMORES DESCRIPTION NEEDED HERE. These samples were QCed initially using the `a
 
 ```{r loadData, include=FALSE}
 #outputFilePath = file.path(tempdir(), "chemoresQcedExpressionSet.rbin")
-#used = c("syn1670672", "syn1670619")
+#used = c("syn1680071", "syn1681152", "syn1680091", "syn1681333")
 
 ## SCRIPT TO QC AND PROCESS THE CHEMORES DATASET
 #####
@@ -23,66 +23,46 @@ myRepo <- getRepo(repository="Sage-Bionetworks/CRC-RASness",
                   ref="branch", refName="dev")
 sourceRepoFile(myRepo, "functions/utilityFunctions.R")
 
-## GRAB THE ARCHIVE FILE FROM CHEMORES - UNTAR IN TEMP DIRECTORY
-crEnt <- downloadEntity("syn1670672")
-crDir <- tempfile(pattern="crDir")
-dir.create(crDir)
-untar(file.path(crEnt$cacheDir, crEnt$files), exdir = crDir)
-theseFiles <- list.celfiles(crDir, recursive=T, full.names=T)
+## GRAB THE TARGETS FOR THE EXPRESSION DATA
+crTargetsEnt <- downloadEntity("syn1680091")
+crTargets <- readTargets(file.path(crTargetsEnt$cacheDir, crTargetsEnt$files))
 
-## READ IN CEL FILES
-chemoresExpr <- ReadAffy(filenames=theseFiles)
+## READ IN EXPRESSION OBJECT -- RGList OBJECT
+chemoresExprEnt <- loadEntity("syn1680948")
+chemoresExpr <- chemoresExprEnt$objects$RG
+chemoresExpr <- backgroundCorrect(chemoresExpr, method="normexp", offset=70)
+chemoresExpr <- normalizeWithinArrays(chemoresExpr, method="loess", iterations=3)
+chemoresExpr <- avereps(chemoresExpr, ID=chemoresExpr$genes$ProbeName)
+
+## GET RID OF THE DYE BIAS USING THE DYE SWAP INFORMATION: (T/N-N/T)/2
+tmpExpr <- matrix(as.numeric(NA), nrow=nrow(chemoresExpr$M), ncol=ncol(chemoresExpr$M)/2)
+colnames(tmpExpr) <- unique(chemoresExpr$targets$PatientID)
+rownames(tmpExpr) <- rownames(chemoresExpr$M)
+for( pt in unique(chemoresExpr$targets$PatientID) ){
+  these <- chemoresExpr$target[ chemoresExpr$target$PatientID==pt, ]
+  these$file <- sub(".txt", "", these$FileName, fixed=T)
+  tmpExpr[, pt] <- as.numeric(chemoresExpr$M[, these$file[these$Polarity=="+"] ]) - (chemoresExpr$M[, these$file[these$Polarity=="-"] ])
+}
+
+## BRING IN THE CUSTOM ARRAY DESIGN
+annotEnt <- downloadEntity("syn1681333")
+annot <- read.delim(file.path(annotEnt$cacheDir, annotEnt$files), header=T, as.is=T)
+rownames(annot) <- annot$ProbeID
+
+## GET RID OF CONTROL PROBES
+tmpExpr <- tmpExpr[ chemoresExpr$genes$ControlType==0, ]
+chemoresExpr <- tmpExpr[rownames(annot), ]
+chemoresExpr <- combineProbesToGene(chemoresExpr, annot$GeneName)
+
 
 ## READ IN THE CLINICAL DATA
-clinEnt <- downloadEntity("syn1670619")
-load(file.path(clinEnt$cacheDir, clinEnt$files))
-chemoresClin <- CHEMORES_CLIN
-
-## GET AGE
-# chemoresClin$Age <- (chemoresClin$Date_Surgery_Exerese - chemoresClin$Date_Birth) / 365 * 12
-
-
-
-
-
-
-stopifnot(all(sapply(strsplit(sampleNames(chemoresExpr), ".", fixed=T), "[[", 1) == chemoresClin$SN))
-rownames(chemoresClin) <- sampleNames(chemoresExpr)
-pData(chemoresExpr) <- chemoresClin
-chemoresRaw <- chemoresExpr
-
-scanDate <- protocolData(chemoresRaw)$ScanDate
-scanDate <- chron(gsub(" .*", "", scanDate))
-
-## ORDER SAMPLES IN CHRONOLOGICAL ORDER OF SCAN DATE
-chemoresRaw <- chemoresRaw[, order(scanDate)]
-
-## PERFORM SOME PRELIMINARY QC
-pset <- fitPLM(chemoresRaw)
-```
-
-```{r plmPlots, echo=FALSE}
-par(mfrow=c(2,1))
-RLE(pset, main="RLE for CRC322")
-NUSE(pset, main="NUSE for CRC322")
-rm(pset)
-```
-
-Given the high NUSE for samples collected before 01/01/2007, those 15 samples were removed from all further analyses. We then ran `rma` on the resulting 307 samples which consolidates the feature space down to 54,675 probesets. The first Singular Value was used to collapse multiple probesets to a single expression value per gene. Singular Value Decomposition (SVD) was performed on the entire resulting expression matrix to assess its structure.
-
-```{r subset, include=FALSE}
-# REMOVE EARLY SAMPLES; LARGE SE FROM NUSE PLOT
-chemoresRaw <- chemoresRaw[ , scanDate > "01/01/07" ]
-exprSet <- rma(chemoresRaw)
-expr <- exprs(exprSet)
-
-## COMBINE TO ONE PROBE PER GENE
-mapDat <- unlist(as.list(hgu133plus2SYMBOL))[ rownames(expr) ]
-exprGene <- combineProbesToGene(expr, mapDat)
-exprs(exprSet) <- exprGene
+clinEnt <- downloadEntity("syn1681152")
+chemoresClin <- read.delim(file.path(clinEnt$cacheDir, clinEnt$files), header=T, as.is=T)
+rownames(chemoresClin) <- chemoresClin$Patient_ID_sssyymmdd
+chemoresClin <- chemoresClin[colnames(chemoresExpr), ]
 
 ## SVD ON EXPRESSION MATRIX -- ASSESS OVERALL STRUCTURE AND POSSIBLE LATENT STRUCTURE
-s <- fs(exprGene)
+s <- fs(chemoresExpr)
 ```
 
 ```{r rawSvd, echo=FALSE}
@@ -97,14 +77,12 @@ qplot(s$v[, 1], s$v[, 2],
 The first SVD appears to explain about 20% of the variation and did not appear strongly associated with any clinical covariates.
 
 ```{r normalize, include=FALSE}
-fit <- lmFit(exprSet, model.matrix(~as.numeric(pData(exprSet)$AGE) + pData(exprSet)$Gender))
-bfit <- eBayes(fit)
-#hist(bfit$p.value[,2], main="Limma: Effect of age on gene expression", xlab="p-value")
-exprSetAdj <- exprSet
-exprs(exprSetAdj) <- exprs(exprSet) - fitted.values(fit)
+fit <- lmFit(chemoresExpr, model.matrix(~as.numeric(chemoresClin$age) + factor(chemoresClin$MF)))
+
+chemoresExprAdj <- chemoresExpr - fitted.values(fit)
 
 ## MAKE SURE NO LARGE AMOUNTS OF VARIATION HAVE BEEN ADDED BY PROCESS
-sAdj <- fs(exprs(exprSetAdj))
+sAdj <- fs(chemoresExprAdj)
 ```
 
 The gene-specific fitted values of age were removed from the expression matrix (gender information not available). The following plots are SVD plots after age effects were removed to ensure this did not introduce any unwanted effects to the data.
@@ -113,7 +91,7 @@ The gene-specific fitted values of age were removed from the expression matrix (
 qplot(1:length(sAdj$d), sAdj$d,
       xlab="eigen gene",
       ylab="% variance explained")
-qplot(sAdj$v[, 1], sAdj$v[, 2], colour=label,
+qplot(sAdj$v[, 1], sAdj$v[, 2],
       xlab="1st svd",
       ylab="2nd svd")
 ```
@@ -121,11 +99,9 @@ qplot(sAdj$v[, 1], sAdj$v[, 2], colour=label,
 ```{r saveObject, include=FALSE}
 ## FINALIZE THE SAMPLES THAT WILL BE KEPT FOR FURTHER ANALYSIS
 ## REMOVE UNANNOTATED KRAS
-exprSetAdj <- exprSetAdj[ , pData(exprSetAdj)$KRAS_Mutation != "NaN"]
-kras_status <- pData(exprSetAdj)$KRAS_Mutation
-kras_status[kras_status=="None"] <- "WT"
-kras_status[kras_status=="Yes"] <- "MUT"
-pData(exprSetAdj)$kras_status <- kras_status
+exprSetAdj <- new("ExpressionSet")
+expr(exprSetAdj) <- chemoresExprAdj
+pData(exprSetAdj) <- chemoresClin
 
 chemoresQcedExpressionSet <- exprSetAdj
 save("chemoresQcedExpressionSet", file=file.path(tempdir(), "chemoresQcedExpressionSet.rbin"))
